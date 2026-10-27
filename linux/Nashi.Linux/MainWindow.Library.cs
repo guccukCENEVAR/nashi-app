@@ -72,7 +72,7 @@ internal sealed partial class MainWindow
     private void SelectLibrary(int direction)
     {
         var entries=SearchLibrary(search.Text).ToArray();if(entries.Length==0)return;var old=Array.FindIndex(entries,e=>e.Id==selectedLibraryId);var next=old<0?0:Math.Clamp(old+direction,0,entries.Length-1);SelectCard(entries[next].Id);
-        if(libraryCards.TryGetValue(entries[next].Id,out var card)){card.Focus();card.BringIntoView();}
+        if(libraryCards.TryGetValue(entries[next].Id,out var card)){if(!card.Focus())Avalonia.Threading.Dispatcher.UIThread.Post(()=>card.Focus(),Avalonia.Threading.DispatcherPriority.Loaded);card.BringIntoView();}
     }
     private LibraryEntry? SelectedLibrary()=>SearchLibrary(search.Text).FirstOrDefault(e=>e.Id==selectedLibraryId)??SearchLibrary(search.Text).FirstOrDefault();
     private void PreviewSelectedLibrary(){if(SelectedLibrary() is {} entry)PreviewEntry(entry);}

@@ -146,7 +146,7 @@ internal sealed partial class MainWindow:Window
         if(modifiers==KeyModifiers.Control&&key==Key.OemComma){ShowSettings();return true;}
         if(modifiers==KeyModifiers.Control&&key==Key.D1){ShowLibrary(false);return true;}
         if(modifiers==KeyModifiers.Control&&key==Key.D2){ShowLibrary(true);return true;}
-        if(modifiers==KeyModifiers.Control&&key==Key.F){ShowLibrary(true);search.Focus();search.SelectAll();return true;}
+        if(modifiers==KeyModifiers.Control&&key==Key.F){ShowLibrary(true);FocusSearch();return true;}
         if(busy)return false;
         if(modifiers==KeyModifiers.Control&&key==Key.O){Choose();return true;}
         if(modifiers==KeyModifiers.Control&&key==Key.U){_ = CheckUpdatesAsync(true);return true;}
@@ -160,6 +160,8 @@ internal sealed partial class MainWindow:Window
         if((modifiers==KeyModifiers.Control&&key is Key.Space or Key.Enter)||(modifiers==KeyModifiers.None&&key==Key.Enter&&focus is not Button)){ShowWheel();return true;}
         return false;
     }
+    /// A page shown for the first time attaches its controls on the next layout pass; focus after it.
+    private void FocusSearch(){if(search.Focus())search.SelectAll();else Dispatcher.UIThread.Post(()=>{search.Focus();search.SelectAll();},DispatcherPriority.Loaded);}
     private void RenderLibrary()
     {
         libraryCards.Clear();libraryRows.Children.Clear();recentRows.Children.Clear();var filtered=SearchLibrary(search.Text).ToArray();

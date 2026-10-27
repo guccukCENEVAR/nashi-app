@@ -60,13 +60,13 @@ internal sealed partial class ToolEditor
         {
             try
             {
-                var created=new MediaPlayer(tools);player=created;created.Ended+=()=>{playingRange=false;UpdateTime();};created.Failed+=message=>time.Text=L10n.Text("Preview unavailable: ")+message;
+                var created=new MediaPlayer(tools);player=created;created.Ended+=()=>{playingRange=false;UpdateTime();};created.Failed+=message=>time.Text=L10n.Text("Preview unavailable: "+message);
                 await created.OpenAsync(input,media,previewLifetime.Token);if(previewLifetime.IsCancellationRequested)return;
                 if(mediaHost is not null)mediaHost.Child=created.HasVideo?created.View:Ui.Text("♫",48,"Muted",localize:false).Also(t=>{t.HorizontalAlignment=Avalonia.Layout.HorizontalAlignment.Center;t.Foreground=Avalonia.Media.Brushes.White;});
                 UpdateTime();
             }
             catch(OperationCanceledException){}
-            catch(Exception error)when(error is IOException or InvalidDataException or FileNotFoundException or System.ComponentModel.Win32Exception){time.Text=L10n.Text("Preview unavailable: ")+error.Message;}
+            catch(Exception error)when(error is IOException or InvalidDataException or FileNotFoundException or System.ComponentModel.Win32Exception){time.Text=L10n.Text("Preview unavailable: "+error.Message);}
             await LoadTimelineArtwork();
         };
     }
@@ -95,7 +95,7 @@ internal sealed partial class ToolEditor
             }
         }
         catch(OperationCanceledException){}
-        catch(Exception error)when(error is IOException or ArgumentException or FileNotFoundException){if(IsVisible)ToolTip.SetTip(timeline,L10n.Text("Timeline preview unavailable: ")+error.Message);}
+        catch(Exception error)when(error is IOException or ArgumentException or FileNotFoundException){if(IsVisible)ToolTip.SetTip(timeline,L10n.Text("Timeline preview unavailable: "+error.Message));}
     }
     private void DeletePreviewFiles()
     {
@@ -122,7 +122,7 @@ internal sealed partial class ToolEditor
             duration=info.Duration;scrubber.Maximum=duration;processedPlayback=true;drawing.IsEnabled=false;drawing.IsVisible=false;player.Play();L10n.SetText(time,"Processed preview · export uses the original file.");
         }
         catch(OperationCanceledException){}
-        catch(Exception error)when(error is IOException or ArgumentException or InvalidDataException or FileNotFoundException){if(IsVisible)time.Text=L10n.Text("Preview unavailable: ")+error.Message;}
+        catch(Exception error)when(error is IOException or ArgumentException or InvalidDataException or FileNotFoundException){if(IsVisible)time.Text=L10n.Text("Preview unavailable: "+error.Message);}
         finally{processingPreview=false;if(processedButton is not null){processedButton.IsEnabled=true;L10n.Bind(processedButton,ContentControl.ContentProperty,ProcessedLabel);}}
     }
 }

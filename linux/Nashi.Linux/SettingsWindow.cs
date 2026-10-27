@@ -80,7 +80,7 @@ internal sealed class SettingsWindow:Window
                 break;
             default:
                 Heading("Nashi","A little pear. A lot of possibility.");
-                page.Children.Add(Ui.Text("Local by design · MIT source",13).Also(t=>t.Margin=new(4,12,4,0)));page.Children.Add(Ui.Text("Version "+Updates.Current.ToString(3),13,"Muted",localize:false).Also(t=>t.Margin=new(4,4,4,12)));
+                page.Children.Add(Ui.Text("Local by design · MIT source",13).Also(t=>t.Margin=new(4,12,4,0)));page.Children.Add(Ui.Text("Version "+Updates.Current.ToString(3),13,"Muted").Also(t=>t.Margin=new(4,4,4,12)));
                 page.Children.Add(Ui.Button("Source & third-party notices",()=>Ui.OpenUrl("https://github.com/"+PublicUpdates.Repository)));
                 page.Children.Add(Ui.Button("Open local notices",()=>FileActions.Open(Path.Combine(AppContext.BaseDirectory,"THIRD-PARTY-NOTICES.txt"))));
                 break;

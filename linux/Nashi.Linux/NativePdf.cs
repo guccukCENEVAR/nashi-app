@@ -83,7 +83,12 @@ print(json.dumps([[int(v) for v in box] for box in found]))
         {
             if(!Directory.Exists(root))continue;
             foreach(var python in Directory.EnumerateDirectories(root,"python3*"))foreach(var packages in new[]{"site-packages","dist-packages"})
-            {var module=Path.Combine(python,packages,"cv2");if(Directory.Exists(module))return module;}
+            {
+                var folder=Path.Combine(python,packages);if(!Directory.Exists(folder))continue;
+                // Arch ships a cv2 package directory; Debian-style builds ship a single cv2.*.so module.
+                var module=Path.Combine(folder,"cv2");if(Directory.Exists(module))return module;
+                if(Directory.EnumerateFiles(folder,"cv2*.so").FirstOrDefault() is {} library)return library;
+            }
         }
         return null;
     }
