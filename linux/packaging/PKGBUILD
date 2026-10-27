@@ -1,0 +1,64 @@
+# Builds Nashi from this checkout for Arch Linux and CachyOS:
+#   cd linux/packaging && makepkg -si
+# Restore downloads the locked NuGet packages, so the build needs network access.
+
+pkgname=nashi
+pkgver=0.7.10
+pkgrel=1
+pkgdesc='Convert, fine-tune and share files with a drag-and-wheel interface'
+arch=('x86_64')
+url='https://github.com/orkunisitmak/nashi-app'
+license=('MIT')
+depends=(
+  'ffmpeg'
+  'yt-dlp'
+  'deno'
+  'perl-image-exiftool'
+  'libpulse'
+  'libx11'
+  'fontconfig'
+  'icu'
+  'openssl'
+  'xdg-utils'
+)
+makedepends=('dotnet-sdk>=10')
+optdepends=(
+  'libreoffice: Office, Pages and EPUB conversion and previews (libreoffice-fresh or libreoffice-still)'
+  'tesseract: text recognition (OCR) for redaction and searchable PDFs'
+  'tesseract-data-eng: English OCR language data'
+  'tesseract-data-tur: Turkish OCR language data'
+  'python-opencv: face detection for photo redaction'
+  'kdeconnect: Share to your phone'
+)
+# The self-contained .NET runtime and its native libraries ship pre-stripped; stripping them again can break them.
+options=('!strip' '!debug')
+
+_root="$(realpath "$startdir/../..")"
+
+pkgver() {
+  sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$_root/linux/Directory.Build.props"
+}
+
+build() {
+  # Keep bin/obj out of the checkout so the source tree stays clean.
+  dotnet publish "$_root/linux/Nashi.Linux" -c Release -p:RestoreLockedMode=true \
+    --artifacts-path "$srcdir/artifacts" -o "$srcdir/publish" -nologo
+}
+
+check() {
+  "$srcdir/publish/Nashi" --version
+}
+
+package() {
+  install -dm755 "$pkgdir/usr/lib/nashi" "$pkgdir/usr/bin"
+  cp -a "$srcdir/publish/." "$pkgdir/usr/lib/nashi/"
+  ln -s /usr/lib/nashi/Nashi "$pkgdir/usr/bin/nashi"
+
+  install -Dm644 "$_root/linux/packaging/nashi.desktop" "$pkgdir/usr/share/applications/nashi.desktop"
+  local size
+  for size in 32 48 64 128 256 512; do
+    install -Dm644 "$_root/linux/packaging/icons/nashi-$size.png" \
+      "$pkgdir/usr/share/icons/hicolor/${size}x${size}/apps/nashi.png"
+  done
+  install -Dm644 "$_root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

@@ -26,6 +26,7 @@ Windows görüntüsü, [PR #1](https://github.com/orkunisitmak/nashi-app/pull/1)
 
 - **[macOS ZIP · Apple Silicon, macOS 13+](https://github.com/orkunisitmak/nashi-app/releases/latest/download/Nashi-macOS-arm64.zip):** ZIP’i aç, Nashi.app’i Uygulamalar klasörüne taşı ve aç. macOS kataloğu 27 araç, 45 girdi formatı ve 275 dönüşüm yolu içerir.
 - **[Windows x64 ZIP · yerel önizleme](https://github.com/orkunisitmak/nashi-app/releases/latest/download/Nashi-Windows-x64.zip):** ZIP’in tamamını kendine ait, yazılabilir bir klasöre çıkar ve Nashi.exe’yi aç. Ayrıca .NET kurmak gerekmez. Güncelleme için klasörün bütünlüğünü koru. [Windows özellikleri ve farkları](windows/README.md).
+- **Linux · CachyOS / Arch (x86_64):** kaynak koddan kur: `linux/packaging` klasöründe `makepkg -si` ya da yalnızca kendi kullanıcın için `linux/install.sh`. macOS uygulamasını örnek alır, Windows motorunu paylaşır ve dağıtımının FFmpeg, yt-dlp, LibreOffice ve ExifTool paketlerini kullanır. [Linux kurulumu ve farkları](linux/README.md) · [Türkçe kurulum](#linux-cachyos--arch).
 
 İlk açılışta **Kurulumu tamamla → Eksik araçları indir** akışı Medya ve Office araçlarını sırayla kurar. Bilgisayarında bulunan araçlar yeniden indirilmez; iptal veya hata sonrasında yalnızca eksik gruplarla devam edilir. **Araçlar hazır** durumu iki grup da kullanılabilir olduğunda gösterilir. İndirmeler doğrudan upstream’den gelir; hash’leri kurulumdan önce doğrulanır. Temel yerel görsel/PDF işlemleri hemen çalışır. [Sürümler, hash’ler ve lisanslar](docs/dependencies.md).
 
@@ -39,4 +40,21 @@ Desteklenen medya editörlerinde **Space** oynat/duraklat, **sağ/sol ok** bir s
 
 Dönüştürme ve düzenleme yerelde çalışır. Web indirmeleri seçtiğin siteye bağlanır. Analytics, bulut hesabı veya tarayıcı çerezi aktarma yok. Public güncellemeler GitHub hesabı/token istemez. macOS feed ve arşiv imzasını, Windows arşiv imzasını ve sürümünü doğrular. İşler tamamlanmadan veya iptal edilmeden güncelleme için uygulama kapanmaz. Windows eski uygulama klasörünü geri alınabilir yedek olarak tutar.
 
-Kaynak kod [MIT](LICENSE) lisanslıdır; üçüncü taraf bileşenlerin kendi lisansları geçerlidir. [macOS build adımları](README.md#build) · [Windows build adımları](windows/README.md).
+Kaynak kod [MIT](LICENSE) lisanslıdır; üçüncü taraf bileşenlerin kendi lisansları geçerlidir. [macOS build adımları](README.md#build) · [Windows build adımları](windows/README.md) · [Linux build adımları](linux/README.md).
+
+## Linux (CachyOS / Arch)
+
+Derleme sırasında yalnızca .NET 10 SDK gerekir; uygulama kendi çalışma zamanını içerir.
+
+```sh
+sudo pacman -S --needed git dotnet-sdk
+git clone https://github.com/orkunisitmak/nashi-app.git
+cd nashi-app/linux/packaging
+makepkg -si
+# Tüm özellikler için isteğe bağlı araçlar:
+sudo pacman -S --needed libreoffice-fresh tesseract tesseract-data-eng tesseract-data-tur python-opencv
+```
+
+Root olmadan yalnızca kendi kullanıcın için kurmak istersen depo kök klasöründe `linux/install.sh` çalıştır; kaldırmak için `linux/install.sh --uninstall`. Güncellemek için `git pull` yapıp aynı komutu tekrar çalıştır.
+
+Sürükleme sırasında **Shift** dönüştürme, **Ctrl** araçlar, **Alt** dosya işlemleri çarkını açar; **Ctrl+Shift+D** kopyalanan bağlantıyı indirir. X11 oturumunda bunlar her uygulamada çalışır. Wayland diğer uygulamaların sürükleme ve tuşlarını gizli tuttuğu için tuşu basılı tutarak Nashi penceresine veya bir Float rafına bırak; bağlantı kısayolu için masaüstü ayarlarında `nashi --open-copied-link` komutunu çalıştıran özel bir kısayol ekle. Ayrıntılar: [linux/README.md](linux/README.md).

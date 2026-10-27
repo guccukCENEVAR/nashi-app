@@ -1,0 +1,21 @@
+[Desktop Entry]
+Type=Application
+Name=Nashi
+GenericName=File converter
+GenericName[tr]=Dosya dönüştürücü
+Comment=Convert, fine-tune and share your files
+Comment[tr]=Dosyalarını dönüştür, düzenle ve paylaş
+Exec=nashi %F
+Icon=nashi
+Terminal=false
+StartupWMClass=nashi
+Categories=Utility;FileTools;
+Keywords=convert;compress;crop;pdf;image;video;audio;download;qr;
+Keywords[tr]=dönüştür;sıkıştır;kırp;pdf;görsel;video;ses;indir;qr;
+MimeType=image/png;image/jpeg;image/gif;image/webp;image/avif;image/heic;image/heif;image/tiff;image/bmp;image/svg+xml;video/mp4;video/quicktime;video/x-matroska;video/webm;video/x-msvideo;video/x-ms-wmv;audio/mpeg;audio/mp4;audio/x-m4a;audio/flac;audio/ogg;audio/opus;audio/x-wav;audio/x-aiff;audio/x-ms-wma;application/pdf;application/epub+zip;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/vnd.ms-excel;application/vnd.ms-powerpoint;application/vnd.oasis.opendocument.spreadsheet;application/vnd.apple.pages;application/rtf;text/plain;text/markdown;text/csv;text/tab-separated-values;application/x-subrip;text/vtt;application/zip;application/x-tar;application/gzip;application/vnd.rar;
+Actions=download-link;
+
+[Desktop Action download-link]
+Name=Download copied link
+Name[tr]=Kopyalanan bağlantıyı indir
+Exec=nashi --open-copied-link

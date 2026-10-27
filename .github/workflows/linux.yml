@@ -1,0 +1,59 @@
+name: Linux
+on:
+  push:
+    branches: [main]
+  pull_request:
+  repository_dispatch:
+    types: [owner-pr-merged]
+permissions:
+  contents: read
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install the distribution tools Nashi uses
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends xvfb openbox ffmpeg libimage-exiftool-perl \
+            tesseract-ocr tesseract-ocr-eng tesseract-ocr-tur python3-opencv opencv-data \
+            libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui
+      - name: Build Linux x64
+        run: |
+          dotnet restore linux/Nashi.Linux --locked-mode
+          dotnet build linux/Nashi.Linux -c Release --no-restore
+      - name: Shared engine checks with system tools
+        run: dotnet run --project windows/Nashi.Verify -c Release
+      - name: Desktop smoke test under Xvfb
+        env:
+          DISPLAY: ':99'
+          NASHI_SMOKE_DIRECTORY: ${{ github.workspace }}/build/linux-smoke
+          NASHI_SMOKE_FACE_FIXTURE: ${{ github.workspace }}/Tests/NashiCoreTests/Fixtures/astronaut.png
+        run: |
+          Xvfb :99 -screen 0 1600x1000x24 &
+          sleep 2
+          openbox &
+          sleep 1
+          timeout 900 linux/Nashi.Linux/bin/Release/net10.0/linux-x64/Nashi --smoke-test
+      - name: Package layout
+        run: |
+          cd linux/packaging
+          bash -euc 'startdir=$PWD; srcdir=$RUNNER_TEMP/src; pkgdir=$RUNNER_TEMP/pkg; source ./PKGBUILD; build; check; package'
+          test "$(readlink "$RUNNER_TEMP/pkg/usr/bin/nashi")" = /usr/lib/nashi/Nashi
+          test -x "$RUNNER_TEMP/pkg/usr/lib/nashi/Nashi"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: linux-smoke
+          path: build/linux-smoke
+          retention-days: 7
+          if-no-files-found: warn
