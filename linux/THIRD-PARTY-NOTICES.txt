@@ -1,0 +1,39 @@
+Nashi for Linux. Copyright 2026 Nashi contributors. MIT.
+Independent app inspired by Tangerine; not affiliated with LEAP STUDIO.
+
+.NET 10, Microsoft and contributors, MIT.
+https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+Full text: licenses/dotnet-MIT.txt and licenses/dotnet-THIRD-PARTY-NOTICES.txt
+
+Avalonia 11.3.22 (Avalonia, Avalonia.X11, Avalonia.Skia, Avalonia.FreeDesktop,
+Avalonia.Themes.Fluent), AvaloniaUI OÜ, MIT. https://github.com/AvaloniaUI/Avalonia
+Full text: licenses/Avalonia-MIT.txt
+Tmds.DBus.Protocol and MicroCom.Runtime, MIT, are Avalonia dependencies.
+
+SkiaSharp 2.88.9 and HarfBuzzSharp 8.3.1.1, Microsoft and contributors, MIT.
+Full text: licenses/SkiaSharp-MIT.txt, licenses/HarfBuzzSharp-MIT.txt and the
+native library notices in licenses/SkiaSharp-THIRD-PARTY-NOTICES.txt.
+
+PDFsharp 6.2.4, empira and contributors, MIT. licenses/PDFsharp-MIT.txt
+BouncyCastle.Cryptography 2.7.0, The Legion of the Bouncy Castle Inc., MIT. licenses/BouncyCastle-MIT.txt
+Magick.NET 15.0.0 and Magick.NET.Core, Apache-2.0, https://github.com/dlemstra/Magick.NET.
+Native dependency licenses: licenses/Magick.NET-THIRD-PARTY-NOTICES.txt
+ZXing.Net 0.16.11, Apache-2.0, Michael Jahn and contributors. licenses/ZXing-Apache-2.0.txt
+SharpCompress 0.50.5, MIT, Adam Hathcock and contributors. licenses/SharpCompress-MIT.txt
+PdfPig 0.1.16, Apache-2.0, Eliot Jones and contributors. licenses/PdfPig-Apache-2.0.txt
+PDFium 155.0.8044.0 via bblanchon.PDFium.Linux 155.0.8044: CPU PDF preview and
+rendering; Apache-2.0 packaging, PDFium BSD-style and bundled dependency notices in
+licenses/PDFium-THIRD-PARTY-NOTICES.txt. No JavaScript platform or external link
+actions are enabled by Nashi's read-only form preview.
+Cupertino Files Pages interoperability: MIT with its BSD/LZFSE and PicoDocs
+notices, shared with macOS and Windows; see licenses/cupertino-files.
+
+Exact NuGet packages and transitive dependency hashes are recorded in the
+committed packages.lock.json files.
+
+Runtime tools are not bundled. Nashi runs the copies installed by your
+distribution's package manager and they keep their own licenses: FFmpeg (GPL or
+LGPL depending on the build), yt-dlp (Unlicense), Deno (MIT), LibreOffice
+(MPL-2.0), ExifTool (Artistic/GPL), Tesseract (Apache-2.0) and OpenCV (Apache-2.0).
+Audio previews use the system's libpulse-simple (LGPL-2.1, provided by
+PulseAudio or PipeWire); drag gestures use the system's libX11 (MIT/X11).
