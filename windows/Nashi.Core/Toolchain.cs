@@ -8,17 +8,25 @@ namespace Nashi.Core;
 public sealed class Toolchain(string directory)
 {
     public string DirectoryPath=>Path.GetFullPath(directory);
+    private static readonly string[] Names=["ffmpeg","ffprobe","yt-dlp","deno"];
     public string Executable(string name)
     {
-        if(name is not ("ffmpeg" or "ffprobe" or "yt-dlp" or "deno"))throw new ArgumentException("Unknown tool.");
-        var path=Path.Combine(DirectoryPath,name+".exe");
-        if(!ToolInstallation.UsableFile(path))throw new FileNotFoundException("Choose Set up media tools first.");return path;
+        if(!Names.Contains(name))throw new ArgumentException("Unknown tool.");
+        return Locate(DirectoryPath,name)??throw new FileNotFoundException(SystemTools.UsesPackageManager?"Install "+name+" with your package manager, then try again.":"Choose Set up media tools first.");
     }
-    private static bool Complete(string directory)=>new[]{"ffmpeg","ffprobe","yt-dlp","deno"}.All(n=>ToolInstallation.UsableFile(Path.Combine(directory,n+".exe")));
+    // A private tools folder wins; on Unix the package manager's copy on PATH is used otherwise.
+    private static string? Locate(string directory,string name)
+    {
+        if(!SystemTools.UsesPackageManager){var path=Path.Combine(directory,name+".exe");return ToolInstallation.UsableFile(path)?path:null;}
+        var local=Path.Combine(directory,name);return SystemTools.IsExecutable(local)?local:SystemTools.Find(name);
+    }
+    private static bool Complete(string directory)=>Names.All(n=>Locate(directory,n) is not null);
     public bool Ready=>Complete(DirectoryPath);
+    public string[] Missing=>Names.Where(n=>Locate(DirectoryPath,n) is null).ToArray();
     public async Task InstallAsync(IProgress<OperationProgress>? progress=null,CancellationToken token=default)
     {
         token.ThrowIfCancellationRequested();if(Ready){progress?.Report(new(1,"Media tools ready"));return;}
+        if(SystemTools.UsesPackageManager)throw new PlatformNotSupportedException("Install "+string.Join(", ",Missing)+" with your package manager.");
         var parent=Path.GetDirectoryName(DirectoryPath)!;Directory.CreateDirectory(parent);
         var stage=Path.Combine(parent,"tools-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(stage);
         try
