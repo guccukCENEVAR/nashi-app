@@ -95,7 +95,7 @@ internal sealed partial class MainWindow
             var menu=new ContextMenu();foreach(var (name,localize,run) in commands){var item=new MenuItem{Header=name};if(localize)L10n.Bind(item,MenuItem.HeaderProperty,name);item.Click+=(_,_)=>run();menu.Items.Add(item);}
             button.IsEnabled=menu.Items.Count>0;button.Click+=(_,_)=>menu.Open(button);Grid.SetColumn(button,column);tiles.Children.Add(button);
         }
-        Tile(0,"Convert",$"{formats.Length} ways to change it","⇄",formats.Select(f=>(f.ToUpperInvariant(),false,(Action)(async()=>await EditAsync(new("convert:"+f,"Convert","↗"))))));
+        Tile(0,"Convert",formats.Length==1?"1 way to change it":$"{formats.Length} ways to change it","⇄",formats.Select(f=>(f.ToUpperInvariant(),false,(Action)(async()=>await EditAsync(new("convert:"+f,"Convert","↗"))))));
         Tile(1,"Fine-tune","Edit, compress, and more","☷",choices.Select(t=>(t.Title,true,(Action)(async()=>await EditAsync(t)))));
         Tile(2,"Move & share","Send it on its way","↗",FileActionChoices.Select(t=>(t.Title,true,(Action)(async()=>await PerformFileAction(t.Id,files.ToArray())))));
         var quick=new WrapPanel{Margin=new(0,8,0,0)};var label=Ui.Text("QUICK PICKS",10,"Muted");label.Margin=new(4,0,8,0);quick.Children.Add(label);

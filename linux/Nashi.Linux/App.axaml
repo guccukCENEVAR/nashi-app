@@ -19,7 +19,6 @@
           <SolidColorBrush x:Key="GoldInk" Color="#704F17"/>
           <SolidColorBrush x:Key="Forest" Color="#30543B"/>
           <SolidColorBrush x:Key="Hover" Color="#0A243B2B"/>
-          <Color x:Key="SystemAccentColor">#C99A2E</Color>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="Paper" Color="#111A14"/>
@@ -34,7 +33,6 @@
           <SolidColorBrush x:Key="GoldInk" Color="#E8C475"/>
           <SolidColorBrush x:Key="Forest" Color="#B3D19E"/>
           <SolidColorBrush x:Key="Hover" Color="#12E7EBE6"/>
-          <Color x:Key="SystemAccentColor">#E8BF59</Color>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
       <LinearGradientBrush x:Key="Primary" StartPoint="0%,0%" EndPoint="100%,0%">
@@ -46,7 +44,12 @@
     </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>
-    <FluentTheme/>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#C99A2E" RegionColor="#F9F6ED" AltHigh="#F9F6ED"/>
+        <ColorPaletteResources x:Key="Dark" Accent="#E8BF59" RegionColor="#111A14" AltHigh="#111A14"/>
+      </FluentTheme.Palettes>
+    </FluentTheme>
     <Style Selector="Window">
       <Setter Property="Background" Value="{DynamicResource Paper}"/>
       <Setter Property="Foreground" Value="{DynamicResource Ink}"/>

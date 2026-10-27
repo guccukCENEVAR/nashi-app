@@ -182,7 +182,8 @@ internal sealed partial class MainWindow:Window
         var info=new StackPanel{Orientation=Orientation.Horizontal};info.Children.Add(Ui.Text(entry.Action,10,"Muted"));info.Children.Add(Ui.Text("  ·  "+entry.Created.ToLocalTime().ToString("g",System.Globalization.CultureInfo.CurrentCulture),10,"Muted",localize:false));if(available.Length<entry.Paths.Length)info.Children.Add(Ui.Text("  ·  Files missing",10,"Muted"));text.Children.Add(info);row.Children.Add(text);
         var card=Ui.Card(row);if(!compact)ConfigureLibraryRow(card,entry);card.Padding=new(14,10);if(compact){card.CornerRadius=new(12);card.BorderThickness=new(0);card.Margin=new(0,0,0,2);}return card;
     }
-    private void OpenDownload()
+    internal Window? DownloadWindow=>webWindow;
+    internal void OpenDownload()
     {
         if(webWindow?.IsVisible==true){webWindow.Activate();link.Focus();return;}
         var dialog=new Window{Title="Download from the web · Nashi",Width=800,Height=650,MinWidth=640,MinHeight=400,WindowStartupLocation=WindowStartupLocation.CenterOwner,Icon=Ui.Icon(),Content=new ScrollViewer{Content=webContent,VerticalScrollBarVisibility=ScrollBarVisibility.Auto}};L10n.Title(dialog,"Download from the web · Nashi");webWindow=dialog;

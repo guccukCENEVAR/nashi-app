@@ -34,6 +34,7 @@ internal static class WheelPresentation
         var preferred=LabelRadius(count,half);
         for(var font=16d;font>=10;font-=.5)for(var width=142d;width>=72;width-=7)
         {
+            if(!WordsFit(choice,font,width))continue;
             var label=Label(choice,font,width);label.Measure(new Size(width,double.PositiveInfinity));var h=label.DesiredSize.Height;
             for(var step=0;step<=20;step++)
             {
@@ -43,6 +44,8 @@ internal static class WheelPresentation
         }
         var fallback=Label(choice,10,72,symbol:false);fallback.Measure(new Size(72,double.PositiveInfinity));return(fallback,new Point(Center+preferred*Math.Cos(angle),Center+preferred*Math.Sin(angle)));
     }
+    /// Wrapping must only break between words: "KODLARINI" split as "KODLARI / NI" reads as two words.
+    private static bool WordsFit(ToolChoice choice,double font,double width)=>L10n.Uppercase(choice.Title).Split(' ',StringSplitOptions.RemoveEmptyEntries).All(word=>{var probe=new TextBlock{Text=word,FontSize=font,FontWeight=FontWeight.SemiBold};probe.Measure(Size.Infinity);return probe.DesiredSize.Width<=width;});
     private static StackPanel Label(ToolChoice choice,double font,double width,bool symbol=true)
     {
         var label=new StackPanel{Width=width,IsHitTestVisible=false};

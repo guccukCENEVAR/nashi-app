@@ -14,6 +14,7 @@ public sealed partial class App:Application
         if(ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             Desktop=desktop;var args=Program.Arguments;
+            if(args.Contains("--ui-audit")){Dispatcher.UIThread.Post(async()=>Quit(await UIAudit.RunAsync(args)));base.OnFrameworkInitializationCompleted();return;}
             if(args.Contains("--smoke-test")){Dispatcher.UIThread.Post(async()=>Quit(await SmokeTests.RunAsync()));base.OnFrameworkInitializationCompleted();return;}
             var paths=args.Where(p=>!p.StartsWith("--",StringComparison.Ordinal)&&(File.Exists(p)||Directory.Exists(p))).Select(Path.GetFullPath).ToArray();
             var background=args.Contains("--background");
