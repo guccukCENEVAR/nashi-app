@@ -15,11 +15,12 @@
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="../../windows/Nashi.Core/Nashi.Core.csproj" /></ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.22" />
+    <PackageReference Include="Avalonia" Version="12.1.4" />
     <!-- X11 (also used through XWayland) with Skia rendering: no Windows or macOS backends ship. -->
-    <PackageReference Include="Avalonia.X11" Version="11.3.22" />
-    <PackageReference Include="Avalonia.Skia" Version="11.3.22" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageReference Include="Avalonia.X11" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.HarfBuzz" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <!-- Nashi has no analytics; keep Avalonia's build-time usage statistics out of the build. -->
     <PackageReference Include="Avalonia.BuildServices" Version="11.3.2" ExcludeAssets="all" PrivateAssets="all" />
     <PackageReference Include="bblanchon.PDFium.Linux" Version="155.0.8044" />

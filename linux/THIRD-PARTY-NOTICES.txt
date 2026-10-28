@@ -5,12 +5,12 @@ Independent app inspired by Tangerine; not affiliated with LEAP STUDIO.
 https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
 Full text: licenses/dotnet-MIT.txt and licenses/dotnet-THIRD-PARTY-NOTICES.txt
 
-Avalonia 11.3.22 (Avalonia, Avalonia.X11, Avalonia.Skia, Avalonia.FreeDesktop,
-Avalonia.Themes.Fluent), AvaloniaUI OÜ, MIT. https://github.com/AvaloniaUI/Avalonia
+Avalonia 12.1.4 (Avalonia, Avalonia.X11, Avalonia.Skia, Avalonia.HarfBuzz,
+Avalonia.FreeDesktop, Avalonia.FreeDesktop.AtSpi, Avalonia.Themes.Fluent), AvaloniaUI OÜ, MIT. https://github.com/AvaloniaUI/Avalonia
 Full text: licenses/Avalonia-MIT.txt
 Tmds.DBus.Protocol and MicroCom.Runtime, MIT, are Avalonia dependencies.
 
-SkiaSharp 2.88.9 and HarfBuzzSharp 8.3.1.1, Microsoft and contributors, MIT.
+SkiaSharp 3.119.4 and HarfBuzzSharp 8.3.1.3, Microsoft and contributors, MIT.
 Full text: licenses/SkiaSharp-MIT.txt, licenses/HarfBuzzSharp-MIT.txt and the
 native library notices in licenses/SkiaSharp-THIRD-PARTY-NOTICES.txt.
 

@@ -132,7 +132,14 @@ internal static partial class ImageEngine
     internal static ImageFrame Resize(ImageFrame image,int width,int height)
     {
         ValidateCanvas(width,height);
-        return Render(width,height,canvas=>{using var paint=new SKPaint{FilterQuality=SKFilterQuality.High,IsAntialias=true};canvas.DrawBitmap(image.Bitmap,new SKRect(0,0,width,height),paint);});
+        return Render(width,height,canvas=>DrawSmooth(canvas,image.Bitmap,new SKRect(0,0,width,height)));
+    }
+    /// High-quality scaling: mipmapped linear when shrinking (no aliasing), Mitchell cubic when enlarging.
+    internal static void DrawSmooth(SKCanvas canvas,SKBitmap bitmap,SKRect target,SKPaint? paint=null)
+    {
+        using var image=SKImage.FromBitmap(bitmap);
+        var sampling=target.Width<bitmap.Width||target.Height<bitmap.Height?new SKSamplingOptions(SKFilterMode.Linear,SKMipmapMode.Linear):new SKSamplingOptions(SKCubicResampler.Mitchell);
+        canvas.DrawImage(image,target,sampling,paint);
     }
     internal static ImageFrame Crop(ImageFrame image,ImageRect crop)
     {
@@ -154,8 +161,10 @@ internal static partial class ImageEngine
         ValidateCanvas(width,height);
         return Render(width,height,canvas=>
         {
-            using var paint=new SKPaint{FilterQuality=turn%90==0?SKFilterQuality.None:SKFilterQuality.High,IsAntialias=turn%90!=0};
-            canvas.Translate(width/2f,height/2f);canvas.RotateDegrees((float)turn);canvas.DrawBitmap(image.Bitmap,-image.PixelWidth/2f,-image.PixelHeight/2f,paint);
+            // Right-angle turns copy pixels exactly; other angles resample smoothly.
+            using var paint=new SKPaint{IsAntialias=turn%90!=0};using var source=SKImage.FromBitmap(image.Bitmap);
+            canvas.Translate(width/2f,height/2f);canvas.RotateDegrees((float)turn);
+            canvas.DrawImage(source,-image.PixelWidth/2f,-image.PixelHeight/2f,turn%90==0?new SKSamplingOptions(SKFilterMode.Nearest):new SKSamplingOptions(SKCubicResampler.Mitchell),paint);
         });
     }
     internal static ImageFrame Render(int width,int height,Action<SKCanvas> draw)

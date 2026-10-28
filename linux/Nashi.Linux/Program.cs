@@ -28,5 +28,5 @@ internal static class Program
     }
 
     // Avalonia's designer and tooling look for this method by name.
-    public static AppBuilder BuildAvaloniaApp()=>AppBuilder.Configure<App>().UseX11().UseSkia().With(new X11PlatformOptions{WmClass="nashi"}).LogToTrace();
+    public static AppBuilder BuildAvaloniaApp()=>AppBuilder.Configure<App>().UseX11().UseSkia().UseHarfBuzz().With(new X11PlatformOptions{WmClass="nashi"}).LogToTrace();
 }

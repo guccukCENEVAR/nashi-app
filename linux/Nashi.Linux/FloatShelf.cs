@@ -31,7 +31,7 @@ internal sealed class FloatShelf:Window
     public FloatShelf(IEnumerable<string> initial,Func<IReadOnlyList<string>,string,Task> action,Action<IReadOnlyList<string>> reuse,Toolchain tools,OfficeRuntime office)
     {
         this.action=action;this.reuse=reuse;this.tools=tools;this.office=office;Title="Float · Nashi";Icon=Ui.Icon();
-        Width=112;Height=136;Topmost=true;ShowInTaskbar=false;SystemDecorations=SystemDecorations.None;CanResize=false;Background=Brushes.Transparent;TransparencyLevelHint=[WindowTransparencyLevel.Transparent];WindowStartupLocation=WindowStartupLocation.CenterScreen;
+        Width=112;Height=136;Topmost=true;ShowInTaskbar=false;WindowDecorations=WindowDecorations.None;CanResize=false;Background=Brushes.Transparent;TransparencyLevelHint=[WindowTransparencyLevel.Transparent];WindowStartupLocation=WindowStartupLocation.CenterScreen;
         DragDrop.SetAllowDrop(this,true);
         Content=new Grid{Children={glass,root}};root.Children.Add(header);header.Children.Add(stack);header.Children.Add(countPlate);header.Children.Add(count);
         close=Control("×","Close Float without deleting files",Close);close.HorizontalAlignment=HorizontalAlignment.Left;close.Margin=new(6,6,0,0);header.Children.Add(close);
@@ -77,7 +77,7 @@ internal sealed class FloatShelf:Window
     }
     private void ScheduleHover(bool inside){hover.Stop();hoverInside=inside;hover.Interval=TimeSpan.FromMilliseconds(inside?200:650);hover.Start();}
     private void MoveShelf(PointerPressedEventArgs e){interacting=true;hover.Stop();BeginMoveDrag(e);DispatcherTimer.RunOnce(()=>{interacting=false;edge=SnapEdge();ScheduleHover(false);},TimeSpan.FromMilliseconds(400));}
-    private async Task Carry(PointerEventArgs origin,string[] selected)
+    private async Task Carry(PointerPressedEventArgs origin,string[] selected)
     {
         if(selected.Length==0){interacting=false;return;}interacting=true;hover.Stop();
         try{var transfer=await FileActions.Transfer(this,selected);if(transfer is not null)await DragDrop.DoDragDropAsync(origin,transfer,DragDropEffects.Copy|DragDropEffects.Move);}

@@ -19,7 +19,7 @@ internal sealed partial class MainWindow:Window
     private readonly Grid actions=new();
     private readonly TextBlock selection=new(){FontSize=23,FontWeight=FontWeight.Bold,TextWrapping=TextWrapping.Wrap};
     private readonly TextBlock status=Ui.Text("Files stay on your computer.",12,"Muted");
-    private readonly TextBox link=new(){Watermark="https://…"};
+    private readonly TextBox link=new(){PlaceholderText="https://…"};
     private readonly ComboBox downloadKind=L10n.Choices(["video","audio","thumbnail"]);
     private readonly Toolchain tools=new(Path.Combine(DataDirectory,"Tools","v1"));
     private readonly LibraryStore library;
@@ -50,8 +50,8 @@ internal sealed partial class MainWindow:Window
         this.library=library??new LibraryStore(DataDirectory);preferences=new(this.library.DirectoryPath);ApplyPreferences();NashiTheme.Apply(this.library.Appearance);
         Title="Nashi";Width=820;Height=780;MinWidth=700;MinHeight=580;WindowStartupLocation=WindowStartupLocation.CenterScreen;Icon=Ui.Icon();
         DragDrop.SetAllowDrop(this,true);
-        L10n.Bind(link,TextBox.WatermarkProperty,"Paste a public video, image or audio page link");L10n.Bind(recentSearch,TextBox.WatermarkProperty,"Find a recent file");L10n.Bind(search,TextBox.WatermarkProperty,"Find a file or tool in Library");
-        var root=new DockPanel{Margin=new(28,18,28,18)};Content=root;
+        L10n.Bind(link,TextBox.PlaceholderTextProperty,"Paste a public video, image or audio page link");L10n.Bind(recentSearch,TextBox.PlaceholderTextProperty,"Find a recent file");L10n.Bind(search,TextBox.PlaceholderTextProperty,"Find a file or tool in Library");
+        var root=new DockPanel{Margin=new(28,18,28,18)};Content=WithDropZones(root);
         var header=new DockPanel{Margin=new(0,0,0,18)};DockPanel.SetDock(header,Dock.Top);root.Children.Add(header);
         var controls=new WrapPanel{HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Center};DockPanel.SetDock(controls,Dock.Right);header.Children.Add(controls);
         homeButton=Ui.Button("Home",()=>ShowLibrary(false));libraryButton=Ui.Button("Library",()=>ShowLibrary(true));toolsSetupButton=Ui.Button(ToolsReady?"Tools ready":"Finish setup",ShowToolSetupMenu);
@@ -88,8 +88,9 @@ internal sealed partial class MainWindow:Window
         var searchLabel=Ui.Text("Find a file or tool  ·  Ctrl+F",12,"Muted");searchLabel.Margin=new(4,20,4,0);libraryPage.Children.Add(searchLabel);libraryPage.Children.Add(search);libraryPage.Children.Add(libraryRows);search.TextChanged+=(_,_)=>RenderLibrary();
         AutomationProperties.SetAutomationId(search,"LibrarySearch");AutomationProperties.SetAutomationId(link,"DownloadLink");AutomationProperties.SetAutomationId(chips,"SelectedFiles");
         Closing+=(_,e)=>{if(busy){e.Cancel=true;L10n.SetText(status,"Finish the current operation or choose Cancel before closing Nashi.");}};
-        AddHandler(DragDrop.DragOverEvent,(_,e)=>{e.DragEffects=!busy&&(e.DataTransfer.Contains(DataFormat.File)||e.DataTransfer.Contains(DataFormat.Text)||e.DataTransfer.Contains(TransferContent.UriListFormat))?DragDropEffects.Copy:DragDropEffects.None;e.Handled=true;});
-        AddHandler(DragDrop.DropEvent,(_,e)=>{if(!busy)OnWindowDrop(TransferContent.From(e.DataTransfer),e.KeyModifiers);e.Handled=true;});
+        void Over(DragEventArgs e){e.DragEffects=!busy&&(e.DataTransfer.Contains(DataFormat.File)||e.DataTransfer.Contains(DataFormat.Text)||e.DataTransfer.Contains(TransferContent.UriListFormat))?DragDropEffects.Copy:DragDropEffects.None;TrackDropZones(e);e.Handled=true;}
+        AddHandler(DragDrop.DragEnterEvent,(_,e)=>Over(e));AddHandler(DragDrop.DragOverEvent,(_,e)=>Over(e));AddHandler(DragDrop.DragLeaveEvent,(_,_)=>LeaveDropZones());
+        AddHandler(DragDrop.DropEvent,(_,e)=>{var kind=DropKind(e);HideDropZones(null,EventArgs.Empty);if(!busy)OnWindowDrop(TransferContent.From(e.DataTransfer),kind);e.Handled=true;});
         AddHandler(KeyDownEvent,(_,e)=>{if(HandleShortcut(e.Key,e.KeyModifiers,FocusManager?.GetFocusedElement()))e.Handled=true;},RoutingStrategies.Tunnel);
         if(initial is not null)Add(initial);else Refresh();ShowLibrary(false);RenderLibrary();Opened+=(_,_)=>NashiTheme.Entrance(LibraryVisible?libraryPage:home);
         if(this.library.RecoveryNotice is {} notice)L10n.SetText(status,notice);

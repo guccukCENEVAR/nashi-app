@@ -66,7 +66,7 @@ internal sealed class WelcomeWindow:Window
                 yield return Body(page==1?"Drag a file in your file manager, hold Shift, and drop onto its next format.":page==2?"Hold Ctrl while dragging to crop, compress, annotate, and give your file a little love.":"Hold Alt while dragging to copy, move, share, or carry files in a floating shelf.");
                 var chord=new StackPanel{Orientation=Orientation.Horizontal,Spacing=9};chord.Children.Add(Ui.Text(page==1?"⇧":page==2?"Ctrl":"Alt",page==1?22:16,localize:false));chord.Children.Add(Ui.Text(page==1?"Shift to convert":page==2?"Ctrl for tools":"Alt for actions",12));
                 var key=Ui.Card(chord);key.Padding=new(13);key.CornerRadius=new(14);key.HorizontalAlignment=HorizontalAlignment.Left;yield return key;
-                yield return Ui.Text(GlobalDragController.GlobalGesturesAvailable?"You can also choose files from the main window.":"On Wayland, drop onto the Nashi window or a Float shelf while holding the key.",11,"Muted");break;
+                yield return Ui.Text(GlobalDragController.GlobalGesturesAvailable?"You can also choose files from the main window.":"On Wayland, drag files onto the Nashi window and drop them on a wheel zone.",11,"Muted");break;
             case 4:
                 yield return Body("Fresh copies are saved beside the originals by default. You can choose one folder for every new copy instead.");
                 yield return Ui.Text("Optional. You can change this in Settings.",11,"Muted");break;

@@ -77,13 +77,13 @@ internal sealed class WheelWindow:Window
     private readonly List<Avalonia.Controls.Shapes.Path> sectors=[];private readonly List<Button> buttons=[];
     private readonly Canvas surface=new(){Width=WheelPresentation.Canvas,Height=WheelPresentation.Canvas,Background=Brushes.Transparent};
     private IReadOnlyList<ToolChoice> choices;private readonly Action<ToolChoice,TransferContent?> select;private readonly Func<TransferContent,IReadOnlyList<ToolChoice>>? dropChoices;
-    private int selected=-1;private bool closing,chosen;
+    private int selected=-1;private bool closing,chosen;private TransferContent? dragged;
     internal int SelectedIndex=>selected;
     internal IReadOnlyList<ToolChoice> Items=>choices;
-    private WheelWindow(IReadOnlyList<ToolChoice> choices,Action<ToolChoice,TransferContent?> select,Func<TransferContent,IReadOnlyList<ToolChoice>>? dropChoices,string? centerTitle)
+    private WheelWindow(IReadOnlyList<ToolChoice> initialChoices,Action<ToolChoice,TransferContent?> select,Func<TransferContent,IReadOnlyList<ToolChoice>>? dropChoices,string? centerTitle)
     {
-        this.choices=choices;this.select=select;this.dropChoices=dropChoices;
-        Title="Nashi tools";Width=Height=WheelPresentation.Diameter*WheelPresentation.Preferences.WheelScale;SystemDecorations=SystemDecorations.None;CanResize=false;ShowInTaskbar=false;Topmost=true;
+        choices=initialChoices;this.select=select;this.dropChoices=dropChoices;
+        Title="Nashi tools";Width=Height=WheelPresentation.Diameter*WheelPresentation.Preferences.WheelScale;WindowDecorations=WindowDecorations.None;CanResize=false;ShowInTaskbar=false;Topmost=true;
         Background=Brushes.Transparent;TransparencyLevelHint=[WindowTransparencyLevel.Transparent];Icon=Ui.Icon();
         Content=new Viewbox{Child=surface,Stretch=Stretch.Uniform};
         Build(centerTitle);
@@ -99,8 +99,14 @@ internal sealed class WheelWindow:Window
         {
             DragDrop.SetAllowDrop(this,true);
             AddHandler(DragDrop.DragEnterEvent,(_,e)=>Track(e));AddHandler(DragDrop.DragOverEvent,(_,e)=>Track(e));
-            AddHandler(DragDrop.DragLeaveEvent,(_,e)=>{Highlight(-1);});
-            AddHandler(DragDrop.DropEvent,(_,e)=>{Track(e);var index=selected;var content=TransferContent.From(e.DataTransfer);e.Handled=true;if(index>=0&&index<choices.Count)Choose(choices[index],content);else Close();});
+            AddHandler(DragDrop.DragLeaveEvent,(_,_)=>Highlight(-1));
+            AddHandler(DragDrop.DropEvent,(_,e)=>
+            {
+                // A read can come back empty while the source is finishing its drop; the drag's earlier read is the same data.
+                var fresh=TransferContent.From(e.DataTransfer);if(HasContent(fresh))dragged=fresh;
+                Track(e);var index=selected;e.Handled=true;
+                if(dragged is not null&&index>=0&&index<choices.Count)Choose(choices[index],dragged);else Close();
+            });
         }
     }
     /// Opens the click wheel centred on the owner (or on screen when Nashi is in the tray).
@@ -121,13 +127,16 @@ internal sealed class WheelWindow:Window
     {
         if(dropChoices is not null)
         {
-            var updated=dropChoices(TransferContent.From(e.DataTransfer)).Take(12).ToArray();
-            if(!updated.Select(c=>c.Id).SequenceEqual(choices.Select(c=>c.Id))){choices=updated;Build(null);}
+            // Reading drag data is a selection round trip with the source app, so read it once per drag, not on every move.
+            if(dragged is null){var content=TransferContent.From(e.DataTransfer);if(HasContent(content))dragged=content;}
+            var updated=dragged is null?[]:dropChoices(dragged).Take(12).ToArray();
+            if(updated.Length>0&&!updated.Select(c=>c.Id).SequenceEqual(choices.Select(c=>c.Id))){choices=updated;Build(null);}
         }
         var p=e.GetPosition(surface);var index=IndexAt(p);
         if(index!=selected&&index>=0)Feedback.Play();Highlight(index);
         e.DragEffects=index>=0?DragDropEffects.Copy:DragDropEffects.None;e.Handled=true;
     }
+    private static bool HasContent(TransferContent content)=>content.Files.Length>0||content.Payload() is not null;
     private int IndexAt(Point p)
     {
         var dx=p.X-WheelPresentation.Center;var dy=p.Y-WheelPresentation.Center;var distance=Math.Sqrt(dx*dx+dy*dy);

@@ -21,8 +21,7 @@ internal static partial class ImageEngine
         var scale=fill?Math.Max(area.Width/source.PixelWidth,area.Height/source.PixelHeight):Math.Min(area.Width/source.PixelWidth,area.Height/source.PixelHeight);
         var w=(float)(source.PixelWidth*scale);var h=(float)(source.PixelHeight*scale);
         canvas.Save();canvas.ClipRoundRect(new SKRoundRect(area,(float)radius,(float)radius),SKClipOperation.Intersect,true);
-        using var paint=new SKPaint{FilterQuality=SKFilterQuality.High,IsAntialias=true};
-        canvas.DrawBitmap(source.Bitmap,SKRect.Create(area.Left+(area.Width-w)/2,area.Top+(area.Height-h)/2,w,h),paint);canvas.Restore();
+        ImageEngine.DrawSmooth(canvas,source.Bitmap,SKRect.Create(area.Left+(area.Width-w)/2,area.Top+(area.Height-h)/2,w,h));canvas.Restore();
     }
     internal static ImageFrame Frame(ImageFrame image,FrameOptions o)
     {
@@ -98,8 +97,8 @@ internal static partial class ImageEngine
                 using var crop=Crop(image,new(area.X,area.Y,Math.Min(area.Width,image.PixelWidth-area.X),Math.Min(area.Height,image.PixelHeight-area.Y)));
                 if(style=="pixelate")
                 {
-                    using var small=Resize(crop,Math.Max(1,area.Width/16),Math.Max(1,area.Height/16));using var nearest=new SKPaint{FilterQuality=SKFilterQuality.None,IsAntialias=false};
-                    g.DrawBitmap(small.Bitmap,target,nearest);
+                    using var small=Resize(crop,Math.Max(1,area.Width/16),Math.Max(1,area.Height/16));using var pixels=SKImage.FromBitmap(small.Bitmap);
+                    g.DrawImage(pixels,target,new SKSamplingOptions(SKFilterMode.Nearest));
                 }
                 else{using var blurred=ImageFrame.FromPng(PhotoCodec.Adjust(crop.ToPng(),new(){Blur=24}));g.DrawBitmap(blurred.Bitmap,target);}
             }

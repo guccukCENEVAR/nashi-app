@@ -66,10 +66,9 @@ internal sealed partial class MainWindow
         var formats=payload.Kind switch{"youtube"=>new[]{"video","audio","thumbnail"},"instagramPhotos"=>["photos"],"instagramReel"=>["video","audio"],"image"=>["image"],_=>["video","audio","image"]};
         L10n.SetChoices(downloadKind,formats,formats.Contains(chosen??"")?chosen:formats[0]);
     }
-    /// Files dropped on Nashi with a drag chord open the matching wheel, as in Finder or Explorer.
-    private void OnWindowDrop(TransferContent data,KeyModifiers modifiers)
+    /// Files dropped on Nashi with a drag chord, or on a drop zone, open the matching wheel.
+    private void OnWindowDrop(TransferContent data,string? kind)
     {
-        var kind=GlobalDragController.Kind(preferences.Value,modifiers);
         if(data.Files.Length==0&&data.Payload() is {} payload){OnGlobalDrop("download:auto",data);return;}
         if(kind is null||data.Files.Length==0){Import(data);return;}
         files.Clear();Add(data.Files);ShowLibrary(false);

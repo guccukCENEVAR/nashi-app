@@ -14,7 +14,8 @@ internal sealed class GlobalDragController:IDisposable
     private readonly MainWindow owner;private readonly PreferencesStore preferences;private readonly Action<string,TransferContent> dropped;
     private readonly DispatcherTimer timer=new(){Interval=TimeSpan.FromMilliseconds(40)};
     private readonly X11.Connection? pointer;private readonly HotKey? hotKey;
-    private PixelPoint start;private bool down,opened;private WheelWindow? wheel;
+    private PixelPoint start;private bool down;private string? openedKind;private WheelWindow? wheel;
+    private static readonly TimeSpan DropGrace=TimeSpan.FromMilliseconds(800);
     internal static bool GlobalGesturesAvailable=>X11.IsX11Session&&X11.Available;
     internal WheelWindow? ActiveWheel=>wheel;
     public GlobalDragController(MainWindow owner,PreferencesStore preferences,Action<string,TransferContent> dropped)
@@ -49,17 +50,22 @@ internal sealed class GlobalDragController:IDisposable
     private void Poll()
     {
         if(pointer is null)return;
-        if(!preferences.Value.Enabled||owner.Busy){CloseWheel();down=false;opened=false;return;}
+        if(!preferences.Value.Enabled||owner.Busy){CloseWheel();down=false;openedKind=null;return;}
         if(!pointer.Pointer(out var x,out var y,out var mask))return;var held=(mask&X11.Button1Mask)!=0;var point=new PixelPoint(x,y);
         if(!held)
         {
-            if(down){down=false;opened=false;var old=wheel;wheel=null;if(old is {IsVisible:true})DispatcherTimer.RunOnce(()=>{if(old.IsVisible)old.Close();},TimeSpan.FromMilliseconds(150));}
+            // The drop reaches the wheel shortly after the button is released; give it time before closing an unused wheel.
+            if(down){down=false;openedKind=null;var old=wheel;wheel=null;if(old is {IsVisible:true})DispatcherTimer.RunOnce(()=>{if(old.IsVisible)old.Close();},DropGrace);}
             return;
         }
-        if(!down){down=true;start=point;opened=false;return;}
-        if(opened||Math.Abs(point.X-start.X)+Math.Abs(point.Y-start.Y)<10)return;
+        if(!down){down=true;start=point;openedKind=null;return;}
+        if(Math.Abs(point.X-start.X)+Math.Abs(point.Y-start.Y)<10)return;
         var modifiers=((mask&X11.ControlMask)!=0?KeyModifiers.Control:KeyModifiers.None)|((mask&X11.ShiftMask)!=0?KeyModifiers.Shift:KeyModifiers.None)|((mask&X11.Mod1Mask)!=0?KeyModifiers.Alt:KeyModifiers.None);
-        var kind=Kind(preferences.Value,modifiers);if(kind is null)return;opened=true;
+        // As on macOS, a different chord mid-drag swaps the wheel; releasing the chord keeps the open one.
+        var kind=Kind(preferences.Value,modifiers);if(kind is null||kind==openedKind)return;
+        // Only a real file or link drag opens a wheel, not Shift-selecting text or Ctrl-dragging a window.
+        if(!pointer.DragInProgress)return;
+        CloseWheel();openedKind=kind;
         wheel=WheelWindow.PresentForDrop(point,[],content=>Choices(kind,content),(choice,content)=>{if(content is not null)dropped(choice.Id,content);});
     }
     internal static IReadOnlyList<ToolChoice> Choices(string kind,TransferContent content)

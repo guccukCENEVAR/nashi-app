@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Avalonia.Input.Platform;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -18,6 +19,13 @@ namespace Nashi.Linux;
 internal static class SmokeTests
 {
     private static int checks;private static readonly List<string> skipped=[];private static string root="";
+    private static async Task<IDataTransfer> FileTransfer(Window window,string path)
+    {
+        var file=await window.StorageProvider.TryGetFileFromPathAsync(new Uri(path))??throw new InvalidOperationException("Fixture file is not reachable: "+path);
+        var transfer=new DataTransfer();transfer.Add(DataTransferItem.CreateFile(file));return transfer;
+    }
+    /// Raises a drag event as the platform drop target does, at a point in the target's coordinates.
+    private static void Drag(Interactive target,Point at,IDataTransfer data,RoutedEvent<DragEventArgs> routed)=>target.RaiseEvent(new DragEventArgs(routed,data,target,at,KeyModifiers.None){RoutedEvent=routed});
     private static void Check(bool value,string reason){if(!value)throw new InvalidOperationException(reason);checks++;}
     private static void Skip(string reason){skipped.Add(reason);Console.WriteLine("SKIP "+reason);}
     private static void Step(string name){Console.WriteLine("· "+name);File.WriteAllText(Path.Combine(root,"progress.txt"),name);}
@@ -122,7 +130,7 @@ internal static class SmokeTests
         var organizer=await PdfOrganizer.CreateAsync(merged);Check(organizer.Pages.SequenceEqual([1,2]),"PDF organizer did not list pages");organizer.Close();
         if(Ocr.Available)
         {
-            using(var words=ImageEngine.Render(900,200,c=>{c.Clear(SKColors.White);using var ink=new SKPaint{Color=SKColors.Black,TextSize=72,IsAntialias=true};c.DrawText("NASHI LINUX",40,130,ink);}))ImageEngine.Save(words,Path.Combine(root,"Words.png"),"png");var file=Path.Combine(root,"Words.png");
+            using(var words=ImageEngine.Render(900,200,c=>{c.Clear(SKColors.White);using var ink=new SKPaint{Color=SKColors.Black,IsAntialias=true};using var font=new SKFont{Size=72};c.DrawText("NASHI LINUX",40,130,font,ink);}))ImageEngine.Save(words,Path.Combine(root,"Words.png"),"png");var file=Path.Combine(root,"Words.png");
             using var frame=ImageEngine.Load(file);var boxes=await NativePdf.DetectAsync(frame,true,false);Check(boxes.Length>=1&&boxes.All(r=>r.Width>0&&r.Bottom<=200),"Tesseract found no word boxes");
         }
         else Skip("Tesseract text detection (tesseract, tesseract-data-eng)");
@@ -171,6 +179,19 @@ internal static class SmokeTests
         wheel.Navigate(Key.Right);wheel.Navigate(Key.Right);Check(wheel.SelectedIndex==expected,"Arrow keys did not move the wheel selection");wheel.Navigate(Key.Enter);await Settle();
         Check(chosen==choices[expected]&&!wheel.IsVisible,"Enter did not choose the highlighted tool");
         chosen=null;wheel=WheelWindow.Present(window,choices,c=>chosen=c);await Settle();wheel.Navigate(Key.Escape);await Settle();Check(chosen is null&&!wheel.IsVisible,"Escape chose a tool");
+        // Drops: a drag wheel opens empty and fills in from the dragged files; its petals must then accept the drop.
+        var transfer=await FileTransfer(window,source);string? dropped=null;
+        var dropWheel=WheelWindow.PresentForDrop(new PixelPoint(500,400),[],content=>GlobalDragController.Choices("convert",content),(c,_)=>dropped=c.Id);await Settle();
+        var top=new Point(dropWheel.Bounds.Width/2,dropWheel.Bounds.Height*.17);
+        foreach(var routed in new[]{DragDrop.DragEnterEvent,DragDrop.DragOverEvent,DragDrop.DropEvent})Drag(dropWheel,top,transfer,routed);await Settle();
+        Check(dropped==GlobalDragController.ChoicesFor("convert",[source])[0].Id&&!dropWheel.IsVisible,"Dropping on a drag wheel petal did not choose it");
+        // Drop zones: without a chord (Wayland), dropping on Tools opens the tools wheel.
+        Drag(window,new Point(window.Bounds.Width/2,window.Bounds.Height/2),transfer,DragDrop.DragOverEvent);await Settle();
+        Check(window.DropZonesVisible&&window.DropZoneCenter("tools") is not null,"Drop zones did not appear for a file drag");
+        var toolsZone=window.DropZoneCenter("tools")!.Value;Drag(window,toolsZone,transfer,DragDrop.DragOverEvent);Drag(window,toolsZone,transfer,DragDrop.DropEvent);await Settle();
+        var zoneWheel=window.OwnedWindows.OfType<WheelWindow>().LastOrDefault(w=>w.IsVisible);
+        Check(!window.DropZonesVisible&&zoneWheel is not null&&zoneWheel.Items.Any(c=>c.Id=="crop"),"Dropping on the Tools zone did not open the tools wheel");
+        zoneWheel!.Navigate(Key.Escape);await Settle();
         // Clipboard: text, links, images and files, with ordinary paste preserved in text fields.
         var clipboard=window.Clipboard!;var text="Nashi clipboard · Türkçe ıİşğü 🍐\nSecond line";
         await clipboard.SetTextAsync(text);await Settle();Press(window,Avalonia.Input.Key.V,KeyModifiers.Control);await Settle(400);

@@ -10,7 +10,7 @@ namespace Nashi.Linux;
 internal sealed partial class MainWindow
 {
     private readonly TextBlock selectionPill=Ui.Text("✦  START HERE",11,"GoldInk");
-    private Guid? selectedLibraryId;private Point libraryDragStart;private bool libraryPressed;
+    private Guid? selectedLibraryId;private Point libraryDragStart;private bool libraryPressed;private PointerPressedEventArgs? libraryPress;
     private readonly TextBlock homeTitle=Ui.Heading("Your files. Their next form.",30);
     private readonly StackPanel shortcutHints=new();
     private readonly Dictionary<Guid,Border> libraryCards=[];
@@ -57,14 +57,14 @@ internal sealed partial class MainWindow
         card.PointerPressed+=(_,e)=>
         {
             if(IsButton(e.Source as Visual))return;var point=e.GetCurrentPoint(card);if(!point.Properties.IsLeftButtonPressed)return;
-            libraryDragStart=point.Position;libraryPressed=true;SelectCard(entry.Id);card.Focus();if(e.ClickCount==2){libraryPressed=false;PreviewEntry(entry);e.Handled=true;}
+            libraryDragStart=point.Position;libraryPressed=true;libraryPress=e;SelectCard(entry.Id);card.Focus();if(e.ClickCount==2){libraryPressed=false;PreviewEntry(entry);e.Handled=true;}
         };
         card.PointerReleased+=(_,_)=>libraryPressed=false;
         card.PointerMoved+=async(_,e)=>
         {
-            if(!libraryPressed||!e.GetCurrentPoint(card).Properties.IsLeftButtonPressed)return;var delta=e.GetPosition(card)-libraryDragStart;
+            if(!libraryPressed||libraryPress is null||!e.GetCurrentPoint(card).Properties.IsLeftButtonPressed)return;var delta=e.GetPosition(card)-libraryDragStart;
             if(Math.Abs(delta.X)+Math.Abs(delta.Y)<8||entry.AvailablePaths.Length==0)return;libraryPressed=false;
-            var transfer=await FileActions.Transfer(this,entry.AvailablePaths);if(transfer is not null)await DragDrop.DoDragDropAsync(e,transfer,DragDropEffects.Copy);
+            var transfer=await FileActions.Transfer(this,entry.AvailablePaths);if(transfer is not null)await DragDrop.DoDragDropAsync(libraryPress,transfer,DragDropEffects.Copy);
         };
     }
     private static bool IsButton(Visual? value){while(value is not null){if(value is Button)return true;value=value.GetVisualParent();}return false;}

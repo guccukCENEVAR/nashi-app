@@ -120,7 +120,6 @@
  "No matching tools for these files.": "Bu dosyalar için uygun araç yok.",
  "No terminal app was found. Set the TERMINAL environment variable to your terminal.": "Terminal uygulaması bulunamadı. TERMINAL ortam değişkenini kullandığın terminale ayarla.",
  "No text could be extracted or recognized in this PDF.": "Bu PDF'den metin çıkarılamadı veya tanınamadı.",
- "On Wayland, drop onto the Nashi window or a Float shelf while holding the key.": "Wayland'de tuşu basılı tutarak Nashi penceresine veya bir Float rafına bırak.",
  "On your computer": "Bilgisayarında",
  "Open local notices": "Yerel lisans bildirimlerini aç",
  "Open release page": "Sürüm sayfasını aç",
@@ -186,7 +185,6 @@
  "Update {0} available": "{0} güncellemesi hazır",
  "Use again": "Yeniden kullan",
  "Version {0}": "Sürüm {0}",
- "Wayland keeps other apps’ drags private. Hold the shortcut key while dropping onto the Nashi window or a Float shelf.": "Wayland, diğer uygulamaların sürükleme hareketlerini gizli tutar. Nashi penceresine veya bir Float rafına bırakırken kısayol tuşunu basılı tut.",
  "Web media": "Web medyası",
  "Welcome tour": "Tanıtım turu",
  "You have the latest published version.": "Yayımlanan en son sürümü kullanıyorsun.",
@@ -199,5 +197,9 @@
  "{0} ways to change it": "Dönüştürmenin {0} yolu",
  "✦  READY WHEN YOU ARE": "✦  SEN HAZIR OLDUĞUNDA",
  "Add or change files": "Dosya ekle veya değiştir",
- "1 way to change it": "Dönüştürmenin 1 yolu"
+ "1 way to change it": "Dönüştürmenin 1 yolu",
+ "Wayland keeps other apps’ drags and keys private, so the wheel can’t follow a drag everywhere. Drag files onto the Nashi window and drop them on Convert, Tools or File actions.": "Wayland, diğer uygulamaların sürükleme ve tuşlarını gizli tutar; bu yüzden çark her yerde açılamaz. Dosyaları Nashi penceresine sürükleyip Dönüştür, Araçlar veya Dosya işlemleri alanına bırak.",
+ "On Wayland, drag files onto the Nashi window and drop them on a wheel zone.": "Wayland'de dosyaları Nashi penceresine sürükle ve bir çark alanına bırak.",
+ "Drop on a wheel": "Bir çarka bırak",
+ "Drop anywhere else to add the files.": "Dosyaları eklemek için başka bir yere bırak."
 }

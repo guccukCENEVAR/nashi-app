@@ -34,7 +34,7 @@ internal static class UIAudit
                 {
                     window=await open();await Task.Delay(700);
                     var size=new PixelSize(Math.Max(1,(int)window.Bounds.Width),Math.Max(1,(int)window.Bounds.Height));
-                    using var bitmap=new RenderTargetBitmap(size,new Vector(96,96));bitmap.Render(window);bitmap.Save(Path.Combine(output,$"{name}-{appearance}-{language}.png"));
+                    using var bitmap=new RenderTargetBitmap(size,new Vector(96,96));bitmap.Render(window);bitmap.Save(Path.Combine(output,$"{name}-{appearance}-{language}.png"),PngBitmapEncoderOptions.Default);
                 }
                 catch(Exception error){failures++;await File.WriteAllTextAsync(Path.Combine(output,$"{name}-{appearance}-{language}.error.txt"),error.ToString());}
                 finally{window?.Close();await Task.Delay(100);}

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Avalonia.Input.Platform;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;

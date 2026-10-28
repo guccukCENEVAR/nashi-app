@@ -202,7 +202,7 @@ internal sealed partial class ToolEditor
         using var target=new RenderTargetBitmap(size,new Vector(96,96));
         var scale=drawing.RenderTransform;drawing.Measure(new Size(size.Width,size.Height));drawing.Arrange(new Rect(drawing.Bounds.Position,new Size(size.Width,size.Height)));
         target.Render(drawing);drawing.RenderTransform=scale;
-        using var stream=new MemoryStream();target.Save(stream);return ImageFrame.FromPng(stream.ToArray());
+        using var stream=new MemoryStream();target.Save(stream,PngBitmapEncoderOptions.Default);return ImageFrame.FromPng(stream.ToArray());
     }
 }
 

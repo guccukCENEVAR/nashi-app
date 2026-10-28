@@ -1,3 +1,4 @@
+using Avalonia.Input.Platform;
 using Avalonia.Controls;
 using Nashi.Core;
 namespace Nashi.Linux;

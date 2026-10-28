@@ -14,7 +14,7 @@ internal sealed class ToastWindow:Window
     private readonly Button action=new(){MinWidth=85};private bool complete;private IReadOnlyList<string> outputs=[];
     public ToastWindow(Window owner,Action? cancel)
     {
-        SystemDecorations=SystemDecorations.None;CanResize=false;ShowInTaskbar=false;ShowActivated=false;Topmost=true;SizeToContent=SizeToContent.Height;Width=510;
+        WindowDecorations=WindowDecorations.None;CanResize=false;ShowInTaskbar=false;ShowActivated=false;Topmost=true;SizeToContent=SizeToContent.Height;Width=510;
         Background=Brushes.Transparent;TransparencyLevelHint=[WindowTransparencyLevel.Transparent];Icon=Ui.Icon();
         L10n.Bind(action,ContentControl.ContentProperty,"Cancel");detail.Res(TextBlock.ForegroundProperty,"Muted");
         var content=new StackPanel();content.Children.Add(label);content.Children.Add(detail);content.Children.Add(bar);

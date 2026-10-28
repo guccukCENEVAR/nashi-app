@@ -20,6 +20,16 @@ internal static class X11
             try{var display=XOpenDisplay(null);return display==0?null:new Connection(display);}
             catch(Exception error)when(error is DllNotFoundException or EntryPointNotFoundException){return null;}
         }
+        private nint dndSelection;
+        /// True while some app drives an XDND drag: the source owns XdndSelection from drag start.
+        internal bool DragInProgress
+        {
+            get
+            {
+                if(Display==0)return false;if(dndSelection==0)dndSelection=XInternAtom(Display,"XdndSelection",0);
+                return XGetSelectionOwner(Display,dndSelection)!=0;
+            }
+        }
         internal bool Pointer(out int x,out int y,out uint mask)
         {
             x=y=0;mask=0;if(Display==0)return false;
@@ -35,6 +45,8 @@ internal static class X11
     [DllImport(Library)]internal static extern int XCloseDisplay(nint display);
     [DllImport(Library)]internal static extern nint XDefaultRootWindow(nint display);
     [DllImport(Library)]internal static extern int XQueryPointer(nint display,nint window,out nint root,out nint child,out int rootX,out int rootY,out int winX,out int winY,out uint mask);
+    [DllImport(Library)]internal static extern nint XInternAtom(nint display,string name,int onlyIfExists);
+    [DllImport(Library)]internal static extern nint XGetSelectionOwner(nint display,nint selection);
     [DllImport(Library)]internal static extern byte XKeysymToKeycode(nint display,nuint keysym);
     [DllImport(Library)]internal static extern int XGrabKey(nint display,int keycode,uint modifiers,nint window,int ownerEvents,int pointerMode,int keyboardMode);
     [DllImport(Library)]internal static extern int XUngrabKey(nint display,int keycode,uint modifiers,nint window);

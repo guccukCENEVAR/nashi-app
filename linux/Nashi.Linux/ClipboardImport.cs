@@ -61,7 +61,7 @@ internal static class ClipboardImport
         if(data.Image is {} bitmap)
         {
             var size=bitmap.PixelSize;if(size.Width<1||size.Height<1||(long)size.Width*size.Height>100_000_000)throw new InvalidOperationException("This image is too large to paste. Choose the image file instead.");
-            var file=Destination(library,"png");using(var stream=new FileStream(file,FileMode.CreateNew))bitmap.Save(stream);return new([file],null,"Pasted image");
+            var file=Destination(library,"png");using(var stream=new FileStream(file,FileMode.CreateNew))bitmap.Save(stream,PngBitmapEncoderOptions.Default);return new([file],null,"Pasted image");
         }
         var text=data.Text;
         if(string.IsNullOrWhiteSpace(text)&&data.Payload() is {} payload)return new([],payload.Url,"Copied link");
