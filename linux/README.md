@@ -66,7 +66,15 @@ Drop or paste files on Home, or launch with files: `nashi photo.heic report.pdf`
 
 On an **X11** session it works as on macOS: start dragging files in Dolphin, Nautilus or any other app, then hold Shift, Ctrl or Alt and the wheel opens under the pointer. Switch keys mid-drag to switch wheels, and release over a petal. Ctrl+Shift+D works everywhere.
 
-**Wayland** keeps other apps' drags and keystrokes private by design, so no app can open a wheel in the middle of someone else's drag. Drag the files onto the Nashi window instead: **Convert**, **Tools** and **File actions** drop zones appear, and dropping on one opens that wheel. Dropping anywhere else adds the files. KDE Plasma 6.8 and later, and current GNOME, are Wayland-only, so this is the default on most desktops. For the link shortcut, add a custom shortcut in your desktop settings that runs `nashi --open-copied-link`. The app menu entry also has a **Download copied link** action.
+**Wayland** keeps other apps' drags and keystrokes private by design, so no app can open a wheel in the middle of someone else's drag. Drag the files onto the Nashi window instead: **Convert**, **Tools** and **File actions** drop zones appear, and dropping on one opens that wheel. Dropping anywhere else adds the files. KDE Plasma 6.8 and later, and current GNOME, are Wayland-only.
+
+To use the chords from any app on Wayland, turn on **Settings → Use drag shortcuts in every app**:
+
+- Nashi then reads Shift, Ctrl, Alt and the left mouse button straight from `/dev/input` and discards every other event as it arrives; nothing is stored or logged.
+- Reading input devices needs your account in the `input` group (`sudo usermod -aG input $USER`, then log out and back in). Be aware that this lets *any* program you run read every key press.
+- On KDE Plasma a small KWin script, loaded for the session and removed when Nashi quits, places the wheel under the pointer. Other desktops do not tell apps where the pointer is, so there the wheel opens in the middle of the screen.
+- The wheel appears only once a file or link drag actually reaches it, so Shift-selecting text does not pop it up.
+- Touchpad tap-and-drag is invisible at this level; use a physical click (mouse or touchpad button). For the link shortcut, add a custom shortcut in your desktop settings that runs `nashi --open-copied-link`. The app menu entry also has a **Download copied link** action.
 
 Everything else is identical on both. Window snapping is left to KDE/GNOME tiling.
 

@@ -198,8 +198,14 @@
  "✦  READY WHEN YOU ARE": "✦  SEN HAZIR OLDUĞUNDA",
  "Add or change files": "Dosya ekle veya değiştir",
  "1 way to change it": "Dönüştürmenin 1 yolu",
- "Wayland keeps other apps’ drags and keys private, so the wheel can’t follow a drag everywhere. Drag files onto the Nashi window and drop them on Convert, Tools or File actions.": "Wayland, diğer uygulamaların sürükleme ve tuşlarını gizli tutar; bu yüzden çark her yerde açılamaz. Dosyaları Nashi penceresine sürükleyip Dönüştür, Araçlar veya Dosya işlemleri alanına bırak.",
  "On Wayland, drag files onto the Nashi window and drop them on a wheel zone.": "Wayland'de dosyaları Nashi penceresine sürükle ve bir çark alanına bırak.",
  "Drop on a wheel": "Bir çarka bırak",
- "Drop anywhere else to add the files.": "Dosyaları eklemek için başka bir yere bırak."
+ "Drop anywhere else to add the files.": "Dosyaları eklemek için başka bir yere bırak.",
+ "Wayland keeps other apps’ drags and keys private. You can always drag files onto the Nashi window and drop them on Convert, Tools or File actions.": "Wayland, diğer uygulamaların sürükleme ve tuşlarını gizli tutar. Dosyaları her zaman Nashi penceresine sürükleyip Dönüştür, Araçlar veya Dosya işlemleri alanına bırakabilirsin.",
+ "Use drag shortcuts in every app": "Sürükleme kısayollarını her uygulamada kullan",
+ "Nashi then reads Shift, Ctrl, Alt and the left mouse button from your input devices and ignores every other key. This needs your account in the input group, which lets any app you run read every key press.": "Nashi bu durumda giriş aygıtlarından yalnızca Shift, Ctrl, Alt ve sol fare tuşunu okur, diğer tüm tuşları yok sayar. Bunun için hesabının input grubunda olması gerekir; bu grup, çalıştırdığın her uygulamanın tüm tuş vuruşlarını okuyabilmesine izin verir.",
+ "Ready. Hold Shift, Ctrl or Alt while dragging files from any app.": "Hazır. Herhangi bir uygulamadan dosya sürüklerken Shift, Ctrl veya Alt'a bas.",
+ "On this desktop the wheel opens in the middle of the screen; KDE Plasma opens it under the pointer.": "Bu masaüstünde çark ekranın ortasında açılır; KDE Plasma'da imlecin altında açılır.",
+ "Run this command once in a terminal, then log out and back in:": "Bu komutu bir kez terminalde çalıştır, sonra oturumu kapatıp yeniden aç:",
+ "No keyboard or mouse was found.": "Klavye veya fare bulunamadı."
 }

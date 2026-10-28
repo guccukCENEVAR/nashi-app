@@ -77,9 +77,10 @@ internal sealed class WheelWindow:Window
     private readonly List<Avalonia.Controls.Shapes.Path> sectors=[];private readonly List<Button> buttons=[];
     private readonly Canvas surface=new(){Width=WheelPresentation.Canvas,Height=WheelPresentation.Canvas,Background=Brushes.Transparent};
     private IReadOnlyList<ToolChoice> choices;private readonly Action<ToolChoice,TransferContent?> select;private readonly Func<TransferContent,IReadOnlyList<ToolChoice>>? dropChoices;
-    private int selected=-1;private bool closing,chosen;private TransferContent? dragged;
+    private int selected=-1;private bool closing,chosen,hidden;private TransferContent? dragged;
     internal int SelectedIndex=>selected;
     internal IReadOnlyList<ToolChoice> Items=>choices;
+    internal bool Revealed=>!hidden;
     private WheelWindow(IReadOnlyList<ToolChoice> initialChoices,Action<ToolChoice,TransferContent?> select,Func<TransferContent,IReadOnlyList<ToolChoice>>? dropChoices,string? centerTitle)
     {
         choices=initialChoices;this.select=select;this.dropChoices=dropChoices;
@@ -92,7 +93,7 @@ internal sealed class WheelWindow:Window
         var pressed=new HashSet<Key>();
         AddHandler(KeyDownEvent,(_,e)=>{pressed.Add(e.Key);e.Handled=Navigate(e.Key);},RoutingStrategies.Tunnel);
         AddHandler(KeyUpEvent,(_,e)=>{if(!pressed.Remove(e.Key))e.Handled=true;},RoutingStrategies.Tunnel);
-        Opened+=(_,_)=>{_ = NashiTheme.FadeIn(this);if(dropChoices is null&&buttons.Count>0){Activate();buttons[0].Focus();}};
+        Opened+=(_,_)=>{if(!hidden)_ = NashiTheme.FadeIn(this);if(dropChoices is null&&buttons.Count>0){Activate();buttons[0].Focus();}};
         Closing+=(_,_)=>closing=true;
         Deactivated+=(_,_)=>{if(dropChoices is null&&!closing&&IsVisible)Close();};
         if(dropChoices is not null)
@@ -117,9 +118,12 @@ internal sealed class WheelWindow:Window
         return wheel;
     }
     /// Opens a drop wheel at a screen point; the petals follow whatever is being dragged.
-    internal static WheelWindow PresentForDrop(PixelPoint center,IReadOnlyList<ToolChoice> initial,Func<TransferContent,IReadOnlyList<ToolChoice>> choicesFor,Action<ToolChoice,TransferContent?> select)
+    /// With hiddenUntilDrag the wheel stays invisible until a file or link drag reaches it, for
+    /// inputs that cannot tell a file drag from, say, Shift-selecting text.
+    internal static WheelWindow PresentForDrop(PixelPoint center,IReadOnlyList<ToolChoice> initial,Func<TransferContent,IReadOnlyList<ToolChoice>> choicesFor,Action<ToolChoice,TransferContent?> select,bool hiddenUntilDrag=false)
     {
-        var wheel=new WheelWindow(initial,select,choicesFor,initial.Count==0?"Keep dragging\nDrop a file or link":null){WindowStartupLocation=WindowStartupLocation.Manual,ShowActivated=false};
+        var wheel=new WheelWindow(initial,select,choicesFor,initial.Count==0?"Keep dragging\nDrop a file or link":null){WindowStartupLocation=WindowStartupLocation.Manual,ShowActivated=false,Title=KWinPlacement.WheelTitle,hidden=hiddenUntilDrag};
+        if(hiddenUntilDrag)wheel.Opacity=0;
         var size=(int)Math.Round(WheelPresentation.Diameter*WheelPresentation.Preferences.WheelScale);wheel.Position=new PixelPoint(center.X-size/2,center.Y-size/2);
         wheel.Show();return wheel;
     }
@@ -129,6 +133,7 @@ internal sealed class WheelWindow:Window
         {
             // Reading drag data is a selection round trip with the source app, so read it once per drag, not on every move.
             if(dragged is null){var content=TransferContent.From(e.DataTransfer);if(HasContent(content))dragged=content;}
+            if(hidden&&dragged is not null){hidden=false;Opacity=1;_ = NashiTheme.FadeIn(this);}
             var updated=dragged is null?[]:dropChoices(dragged).Take(12).ToArray();
             if(updated.Length>0&&!updated.Select(c=>c.Id).SequenceEqual(choices.Select(c=>c.Id))){choices=updated;Build(null);}
         }

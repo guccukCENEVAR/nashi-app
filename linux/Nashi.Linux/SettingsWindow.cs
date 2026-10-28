@@ -3,6 +3,8 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
+using Avalonia.Layout;
 using Avalonia.Interactivity;
 using Nashi.Core;
 namespace Nashi.Linux;
@@ -40,6 +42,30 @@ internal sealed class SettingsWindow:Window
         var language=new ComboBox{ItemsSource=new[]{"English","Türkçe"},SelectedIndex=store.Value.Language=="tr"?1:0,MinWidth=160};AutomationProperties.SetAutomationId(language,"AppLanguage");
         language.SelectionChanged+=(_,_)=>{var chosen=language.SelectedIndex==1?"tr":"en";if(chosen!=store.Value.Language)Save(store.Value with{Language=chosen});};page.Children.Add(language);
     }
+    /// Wayland hides other apps' input, so drag chords there need the opt-in input reader.
+    private void WaylandShortcuts()
+    {
+        void Note(string text,string brush="Muted")=>page.Children.Add(Ui.Text(text,11,brush).Also(t=>{t.Margin=new(30,0,4,6);t.TextWrapping=Avalonia.Media.TextWrapping.Wrap;}));
+        Note("Wayland keeps other apps’ drags and keys private. You can always drag files onto the Nashi window and drop them on Convert, Tools or File actions.");
+        Toggle("Use drag shortcuts in every app",EvdevInput.Enabled,v=>{try{EvdevInput.SetEnabled(v);}catch(Exception error)when(error is IOException or UnauthorizedAccessException){}ShowSection();});
+        Note("Nashi then reads Shift, Ctrl, Alt and the left mouse button from your input devices and ignores every other key. This needs your account in the input group, which lets any app you run read every key press.");
+        if(!EvdevInput.Enabled)return;
+        switch(EvdevInput.Check())
+        {
+            case EvdevInput.Access.Ready:
+                Note("Ready. Hold Shift, Ctrl or Alt while dragging files from any app.","Forest");
+                if(!KWinPlacement.Supported)Note("On this desktop the wheel opens in the middle of the screen; KDE Plasma opens it under the pointer.");
+                break;
+            case EvdevInput.Access.NeedsPermission:
+                const string command="sudo usermod -aG input $USER";
+                Note("Run this command once in a terminal, then log out and back in:");
+                var row=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(30,0,4,8)};
+                row.Children.Add(new SelectableTextBlock{Text=command,FontFamily=new("monospace"),VerticalAlignment=VerticalAlignment.Center,Margin=new(0,0,10,0)});
+                row.Children.Add(Ui.Button("Copy command",async()=>{if(Clipboard is not null)await Clipboard.SetTextAsync(command);}));
+                page.Children.Add(row);break;
+            default:Note("No keyboard or mouse was found.");break;
+        }
+    }
     private void ShowSection()
     {
         page.Children.Clear();
@@ -49,7 +75,7 @@ internal sealed class SettingsWindow:Window
                 Heading("Your kind of flow.","A few small preferences. A smoother everyday.");LanguagePicker();
                 if(appearanceStore is not null)Pick("Appearance",["system","light","dark"],appearanceStore.Appearance,async v=>{try{appearanceStore.SetAppearance(v);NashiTheme.Apply(v);}catch(Exception error)when(error is IOException or UnauthorizedAccessException){await Dialogs.Info(this,error.Message,"Appearance could not be saved");}});
                 Toggle("Enable Nashi drag shortcuts",store.Value.Enabled,v=>Save(store.Value with{Enabled=v}));
-                if(!GlobalDragController.GlobalGesturesAvailable)page.Children.Add(Ui.Text("Wayland keeps other apps’ drags and keys private, so the wheel can’t follow a drag everywhere. Drag files onto the Nashi window and drop them on Convert, Tools or File actions.",11,"Muted").Also(t=>t.Margin=new(30,0,4,8)));
+                if(!GlobalDragController.GlobalGesturesAvailable)WaylandShortcuts();
                 Toggle("Sound feedback",store.Value.Feedback,v=>Save(store.Value with{Feedback=v}));page.Children.Add(Ui.Button("Try feedback",()=>{var was=Feedback.Enabled;Feedback.Enabled=true;Feedback.Play();Feedback.Enabled=was;}));
                 Toggle("Subtle animations",store.Value.Animations,v=>Save(store.Value with{Animations=v}));Toggle("Keep running in the system tray",store.Value.KeepInTray,v=>Save(store.Value with{KeepInTray=v}));Toggle("Reveal finished files in Files",store.Value.RevealFinished,v=>Save(store.Value with{RevealFinished=v}));
                 Pick("Wheel finish",["glass","solid"],store.Value.WheelFinish,v=>Save(store.Value with{WheelFinish=v}));

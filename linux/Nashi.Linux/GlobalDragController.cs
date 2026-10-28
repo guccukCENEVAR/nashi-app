@@ -6,15 +6,16 @@ namespace Nashi.Linux;
 
 /// Drag chords, as on macOS and Windows: hold Shift (convert), Ctrl (tools) or Alt
 /// (file actions) while dragging files or a web link, and a drop wheel opens at the pointer.
-/// X11 exposes the pointer and modifier state globally; Wayland deliberately does not, so
-/// there the same chords work when dropping onto Nashi's window or a Float shelf.
-/// It reads only the pointer button and modifier mask; it never records keystrokes.
+/// X11 exposes the pointer and modifier state globally. Wayland deliberately does not: there the
+/// chords come from the opt-in <see cref="EvdevInput"/> and, on KDE, KWin places the wheel under
+/// the pointer (<see cref="KWinPlacement"/>); elsewhere it opens at the centre of the screen.
+/// It reads only the left button and the modifier keys; it never records keystrokes.
 internal sealed class GlobalDragController:IDisposable
 {
     private readonly MainWindow owner;private readonly PreferencesStore preferences;private readonly Action<string,TransferContent> dropped;
     private readonly DispatcherTimer timer=new(){Interval=TimeSpan.FromMilliseconds(40)};
     private readonly X11.Connection? pointer;private readonly HotKey? hotKey;
-    private PixelPoint start;private bool down;private string? openedKind;private WheelWindow? wheel;
+    private PixelPoint start;private bool down;private string? openedKind;private WheelWindow? wheel;private EvdevInput? evdev;
     private static readonly TimeSpan DropGrace=TimeSpan.FromMilliseconds(800);
     internal static bool GlobalGesturesAvailable=>X11.IsX11Session&&X11.Available;
     internal WheelWindow? ActiveWheel=>wheel;
@@ -22,6 +23,7 @@ internal sealed class GlobalDragController:IDisposable
     {
         this.owner=owner;this.preferences=preferences;this.dropped=dropped;
         if(GlobalGesturesAvailable){pointer=X11.Connection.TryOpen();if(pointer is not null){timer.Tick+=(_,_)=>Poll();timer.Start();}hotKey=HotKey.TryRegister(()=>Dispatcher.UIThread.Post(()=>{if(preferences.Value.Enabled)owner.OpenCopiedLinkFromShortcut();}));}
+        else{timer.Tick+=(_,_)=>PollWayland();timer.Start();_ = KWinPlacement.LoadAsync();}
     }
     internal static string Chord(KeyModifiers modifiers)
     {
@@ -50,31 +52,44 @@ internal sealed class GlobalDragController:IDisposable
     private void Poll()
     {
         if(pointer is null)return;
+        if(!pointer.Pointer(out var x,out var y,out var mask))return;var point=new PixelPoint(x,y);
+        var modifiers=((mask&X11.ControlMask)!=0?KeyModifiers.Control:KeyModifiers.None)|((mask&X11.ShiftMask)!=0?KeyModifiers.Shift:KeyModifiers.None)|((mask&X11.Mod1Mask)!=0?KeyModifiers.Alt:KeyModifiers.None);
+        var held=(mask&X11.Button1Mask)!=0;if(held&&!down)start=point;
+        // Only a real file or link drag opens a wheel, not Shift-selecting text or Ctrl-dragging a window.
+        Step(held,Math.Abs(point.X-start.X)+Math.Abs(point.Y-start.Y)>=10,modifiers,()=>pointer.DragInProgress,point,hiddenUntilDrag:false);
+    }
+    private void PollWayland()
+    {
+        if(!EvdevInput.Enabled){if(evdev is not null){evdev.Dispose();evdev=null;}return;}
+        evdev??=new EvdevInput();evdev.Refresh();
+        // Evdev cannot tell a file drag from a text selection, so the wheel stays hidden until a drag reaches it.
+        Step(evdev.ButtonDown,evdev.MotionSincePress>=4,evdev.Modifiers,()=>true,ScreenCentre(),hiddenUntilDrag:true);
+    }
+    private void Step(bool held,bool moved,KeyModifiers modifiers,Func<bool> dragging,PixelPoint at,bool hiddenUntilDrag)
+    {
         if(!preferences.Value.Enabled||owner.Busy){CloseWheel();down=false;openedKind=null;return;}
-        if(!pointer.Pointer(out var x,out var y,out var mask))return;var held=(mask&X11.Button1Mask)!=0;var point=new PixelPoint(x,y);
         if(!held)
         {
             // The drop reaches the wheel shortly after the button is released; give it time before closing an unused wheel.
-            if(down){down=false;openedKind=null;var old=wheel;wheel=null;if(old is {IsVisible:true})DispatcherTimer.RunOnce(()=>{if(old.IsVisible)old.Close();},DropGrace);}
+            if(down){down=false;openedKind=null;var old=wheel;wheel=null;if(old is {IsVisible:true})DispatcherTimer.RunOnce(()=>{if(old.IsVisible)old.Close();},old.Revealed?DropGrace:TimeSpan.Zero);}
             return;
         }
-        if(!down){down=true;start=point;openedKind=null;return;}
-        if(Math.Abs(point.X-start.X)+Math.Abs(point.Y-start.Y)<10)return;
-        var modifiers=((mask&X11.ControlMask)!=0?KeyModifiers.Control:KeyModifiers.None)|((mask&X11.ShiftMask)!=0?KeyModifiers.Shift:KeyModifiers.None)|((mask&X11.Mod1Mask)!=0?KeyModifiers.Alt:KeyModifiers.None);
+        if(!down){down=true;openedKind=null;return;}
+        if(!moved)return;
         // As on macOS, a different chord mid-drag swaps the wheel; releasing the chord keeps the open one.
-        var kind=Kind(preferences.Value,modifiers);if(kind is null||kind==openedKind)return;
-        // Only a real file or link drag opens a wheel, not Shift-selecting text or Ctrl-dragging a window.
-        if(!pointer.DragInProgress)return;
+        var kind=Kind(preferences.Value,modifiers);if(kind is null||kind==openedKind||!dragging())return;
         CloseWheel();openedKind=kind;
-        wheel=WheelWindow.PresentForDrop(point,[],content=>Choices(kind,content),(choice,content)=>{if(content is not null)dropped(choice.Id,content);});
+        wheel=WheelWindow.PresentForDrop(at,[],content=>Choices(kind,content),(choice,content)=>{if(content is not null)dropped(choice.Id,content);},hiddenUntilDrag);
     }
+    /// KWin moves the wheel under the pointer; without it the wheel waits at the centre of the screen.
+    private PixelPoint ScreenCentre()=>(owner.Screens.ScreenFromWindow(owner)??owner.Screens.Primary)?.Bounds.Center??new PixelPoint(0,0);
     internal static IReadOnlyList<ToolChoice> Choices(string kind,TransferContent content)
     {
         if(content.Files.Length>0)return ChoicesFor(kind,content.Files);
         return content.Payload() is {} web?WebChoices(web):[];
     }
     private void CloseWheel(){wheel?.Close();wheel=null;}
-    public void Dispose(){timer.Stop();CloseWheel();pointer?.Dispose();hotKey?.Dispose();}
+    public void Dispose(){timer.Stop();CloseWheel();pointer?.Dispose();hotKey?.Dispose();evdev?.Dispose();if(!GlobalGesturesAvailable)KWinPlacement.Unload();}
 
     /// Ctrl+Shift+D everywhere on X11. Wayland sessions bind `nashi --open-copied-link` as a desktop shortcut instead.
     private sealed class HotKey:IDisposable

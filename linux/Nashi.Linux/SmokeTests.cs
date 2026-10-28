@@ -41,6 +41,7 @@ internal static class SmokeTests
             Step("PDF and QR");await Pdfs(source);
             Step("Documents");await Documents(tools);
             Step("Clipboard and Library");await Desktop(source,tools);
+            Step("Wayland drag shortcuts");await WaylandShortcuts(source);
             Step("Editors");await Editors(source,tools);
             Step("Media playback");await Media(tools);
             Step("Localization");Localization();
@@ -231,6 +232,79 @@ internal static class SmokeTests
         Check(Updates.Parse("{\"tag_name\":\"v0.7.10-41\",\"html_url\":\"https://github.com/orkunisitmak/nashi-app/releases/tag/v0.7.10-41\"}"u8.ToArray(),new(0,7,10)) is null,"Current version was offered as an update");
         try{Updates.Parse("{\"tag_name\":\"v9.0\",\"html_url\":\"https://evil.example/releases\"}"u8.ToArray(),new(0,7,10));Check(false,"Foreign release page accepted");}catch(InvalidDataException){checks++;}
         window.Close();
+    }
+    // A trimmed /proc/bus/input/devices: a laptop keyboard, a mouse and a power button (neither).
+    private const string InputDevices="""
+        I: Bus=0011 Vendor=0001 Product=0001 Version=ab83
+        N: Name="AT Translated Set 2 keyboard"
+        H: Handlers=sysrq kbd leds event3
+        B: KEY=402000000 3803078f800d001 feffffdfffefffff fffffffffffffffe
+
+        I: Bus=0003 Vendor=046d Product=c077 Version=0111
+        N: Name="Logitech USB Optical Mouse"
+        H: Handlers=mouse0 event5
+        B: KEY=ff0000 0 0 0 0
+        B: REL=903
+
+        I: Bus=0019 Vendor=0000 Product=0001 Version=0000
+        N: Name="Power Button"
+        H: Handlers=kbd event0
+        B: KEY=10000000000000 0
+
+        """;
+    private static byte[] InputEvent(ushort type,ushort code,int value)
+    {
+        var data=new byte[24];System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(data.AsSpan(16),type);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(data.AsSpan(18),code);System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(20),value);return data;
+    }
+    /// Wayland: chords come from evdev, the wheel stays hidden until a real file drag reaches it.
+    private static async Task WaylandShortcuts(string source)
+    {
+        var devices=EvdevInput.Parse(InputDevices.Replace("/dev/input",""));
+        Check(devices.Count==2&&devices.Any(d=>d.Keyboard&&!d.Pointer&&d.Path.EndsWith("event3",StringComparison.Ordinal))&&devices.Any(d=>d.Pointer&&!d.Keyboard&&d.Path.EndsWith("event5",StringComparison.Ordinal)),"Input devices were not classified");
+        var replay=EvdevInput.Replay([..InputEvent(1,29,1),..InputEvent(1,100,1),..InputEvent(1,272,1),..InputEvent(2,0,4),..InputEvent(3,0,9),..InputEvent(1,30,1)]);
+        Check(replay.Modifiers==(KeyModifiers.Control|KeyModifiers.Alt)&&replay.ButtonDown&&replay.MotionSincePress==2,"Input events were decoded wrongly");
+        Check(KWinPlacement.Script.Contains("\""+KWinPlacement.WheelTitle+"\"",StringComparison.Ordinal)&&KWinPlacement.Script.Contains("workspace.cursorPos",StringComparison.Ordinal),"KWin placement script does not target the drop wheel");
+        if(SystemTools.Find("mkfifo") is not {} mkfifo){Skip("Wayland drag shortcut flow (mkfifo)");return;}
+        var folder=Path.Combine(root,"Input");Directory.CreateDirectory(folder);File.WriteAllText(Path.Combine(folder,"devices"),InputDevices);
+        foreach(var name in new[]{"event3","event5"})await ProcessRunner.RunAsync(mkfifo,[Path.Combine(folder,name)]);
+        var session=Environment.GetEnvironmentVariable("XDG_SESSION_TYPE");var desktop=Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP");var wasEnabled=EvdevInput.Enabled;
+        Environment.SetEnvironmentVariable("XDG_SESSION_TYPE","wayland");Environment.SetEnvironmentVariable("XDG_CURRENT_DESKTOP","");
+        EvdevInput.DevicesFile=Path.Combine(folder,"devices");EvdevInput.DeviceDirectory=folder;EvdevInput.SetEnabled(true);
+        var library=new LibraryStore(Path.Combine(root,"WaylandData"));var window=new MainWindow([source],library,checkForUpdates:false);window.Show();await Settle();
+        string? dropped=null;var controller=new GlobalDragController(window,new PreferencesStore(library.DirectoryPath),(id,_)=>dropped=id);
+        try
+        {
+            Check(!GlobalDragController.GlobalGesturesAvailable,"Wayland session was not detected");
+            await using var keyboard=await Task.Run(()=>new FileStream(Path.Combine(folder,"event3"),FileMode.Open,FileAccess.Write));
+            await using var mouse=await Task.Run(()=>new FileStream(Path.Combine(folder,"event5"),FileMode.Open,FileAccess.Write));
+            async Task Send(FileStream device,params byte[][] events){foreach(var e in events)await device.WriteAsync(e);await device.FlushAsync();}
+            async Task Hold(ushort key)
+            {
+                await Send(keyboard,InputEvent(1,key,1));await Send(mouse,InputEvent(1,272,1));await Settle(150);
+                for(var i=0;i<5;i++)await Send(mouse,InputEvent(2,0,3));await Settle(300);
+            }
+            async Task Release(ushort key){await Send(mouse,InputEvent(1,272,0));await Send(keyboard,InputEvent(1,key,0));await Settle(250);}
+            // Shift-selecting text: a hidden wheel that never shows and closes on release.
+            await Hold(42);var quiet=controller.ActiveWheel;
+            Check(quiet is {IsVisible:true,Revealed:false}&&quiet.Opacity==0,"Shift-drag on Wayland did not prepare a hidden wheel");
+            await Release(42);Check(controller.ActiveWheel is null&&!quiet!.IsVisible,"Hidden wheel stayed open after release");
+            // A real file drag reaches the wheel: it appears, and the drop chooses the petal.
+            await Hold(42);var wheel=controller.ActiveWheel!;var transfer=await FileTransfer(window,source);var top=new Point(wheel.Bounds.Width/2,wheel.Bounds.Height*.17);
+            Drag(wheel,top,transfer,DragDrop.DragEnterEvent);await Settle();Check(wheel.Revealed&&wheel.Items.Count>0,"File drag did not reveal the Wayland wheel");
+            Drag(wheel,top,transfer,DragDrop.DragOverEvent);Drag(wheel,top,transfer,DragDrop.DropEvent);await Release(42);
+            Check(dropped==GlobalDragController.ChoicesFor("convert",[source])[0].Id,"Drop on the Wayland wheel did not choose its petal");
+            // Ctrl mid-drag swaps to the tools wheel, as on macOS.
+            await Hold(42);await Send(keyboard,InputEvent(1,42,0),InputEvent(1,29,1),InputEvent(2,0,1));await Send(mouse,InputEvent(2,0,3));await Settle(250);
+            var swapped=controller.ActiveWheel!;Drag(swapped,top,transfer,DragDrop.DragEnterEvent);await Settle();
+            Check(swapped.Items.Any(c=>c.Id=="crop"),"Ctrl mid-drag did not switch to the tools wheel");await Release(29);
+        }
+        finally
+        {
+            controller.Dispose();window.Close();
+            EvdevInput.DevicesFile="/proc/bus/input/devices";EvdevInput.DeviceDirectory="/dev/input";EvdevInput.SetEnabled(wasEnabled);
+            Environment.SetEnvironmentVariable("XDG_SESSION_TYPE",session);Environment.SetEnvironmentVariable("XDG_CURRENT_DESKTOP",desktop);
+        }
     }
     private static async Task Editors(string source,Toolchain tools)
     {

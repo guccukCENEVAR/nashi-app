@@ -16,7 +16,7 @@ internal sealed class SingleInstance:IDisposable
         try{lockFile=new FileStream(Path.Combine(directory,"nashi.lock"),FileMode.OpenOrCreate,FileAccess.ReadWrite,FileShare.None);Primary=true;}
         catch(IOException){Primary=false;}
     }
-    private static string RuntimeDirectory()
+    internal static string RuntimeDirectory()
     {
         // XDG_RUNTIME_DIR is private (0700) to the user; fall back to a private folder in the user's cache.
         var runtime=Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR");
