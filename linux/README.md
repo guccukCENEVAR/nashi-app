@@ -66,7 +66,7 @@ Drop or paste files on Home, or launch with files: `nashi photo.heic report.pdf`
 
 On an **X11** session it works as on macOS: start dragging files in Dolphin, Nautilus or any other app, then hold Shift, Ctrl or Alt and the wheel opens under the pointer. Switch keys mid-drag to switch wheels, and release over a petal. Ctrl+Shift+D works everywhere.
 
-**Wayland** keeps other apps' drags and keystrokes private by design, so no app can open a wheel in the middle of someone else's drag. Drag the files onto the Nashi window instead: **Convert**, **Tools** and **File actions** drop zones appear, and dropping on one opens that wheel. Dropping anywhere else adds the files. For the macOS-style wheel everywhere on KDE Plasma, install `plasma-x11-session` and choose **Plasma (X11)** on the login screen. For the link shortcut, add a custom shortcut in your desktop settings that runs `nashi --open-copied-link`. The app menu entry also has a **Download copied link** action.
+**Wayland** keeps other apps' drags and keystrokes private by design, so no app can open a wheel in the middle of someone else's drag. Drag the files onto the Nashi window instead: **Convert**, **Tools** and **File actions** drop zones appear, and dropping on one opens that wheel. Dropping anywhere else adds the files. KDE Plasma 6.8 and later, and current GNOME, are Wayland-only, so this is the default on most desktops. For the link shortcut, add a custom shortcut in your desktop settings that runs `nashi --open-copied-link`. The app menu entry also has a **Download copied link** action.
 
 Everything else is identical on both. Window snapping is left to KDE/GNOME tiling.
 
